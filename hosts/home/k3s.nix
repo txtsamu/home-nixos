@@ -28,4 +28,11 @@
   environment.systemPackages = with pkgs; [ kubectl kubernetes-helm ];
 
   networking.firewall.allowedTCPPorts = [ 6443 ];
+
+  # democratic-csi's node plugin hostPath-mounts this in (iscsiDirHostPath in
+  # its Helm values, matching warp-vm's convention) - unlike Debian, NixOS
+  # doesn't create /var/iscsi implicitly, so the node pod's mount silently
+  # fails without it (real bug hit standing this up: FailedMount, "/var/iscsi
+  # is not a directory").
+  systemd.tmpfiles.rules = [ "d /var/iscsi 0755 root root -" ];
 }
