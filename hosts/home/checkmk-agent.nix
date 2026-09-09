@@ -50,7 +50,14 @@ let
 
   cmkAgentCtl = pkgs.fetchurl {
     url = "http://monitor.lan/cmk/check_mk/agents/linux/cmk-agent-ctl";
-    hash = "sha256-ptZFFM+JzxYJTr8pMSwZFotCSf20E2HqTT2Qiv4Tjgc=";
+    # `executable = true` makes fetchurl hash the file recursively (NAR
+    # mode, includes the exec bit) rather than as flat content, so this
+    # doesn't match a plain `sha256sum` of the downloaded bytes (that
+    # flat hash - MOK9T8...->  no, ptZFFM...==  - was verified byte-
+    # identical to warp-vm's installed copy beforehand; this is nix's
+    # own recursive-NAR hash of that same content, taken from its first
+    # build's error output).
+    hash = "sha256-y4r1peilcedbvNGQAaJNdFSYj+02tDfTYlg3pcMxSqU=";
     executable = true;
   };
 in
