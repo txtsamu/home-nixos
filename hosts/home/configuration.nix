@@ -12,7 +12,7 @@ in
     ./dns.nix        # T3  - done
     ./proxy.nix      # T4  - done
     ./tunnel.nix     # T5  - done
-    ./vpn.nix        # T6  - stub
+    ./vpn.nix        # T6  - done
     ./evomem.nix     # T7  - done
     ./mcp.nix        # T8  - stub
     ./tiktok-bot.nix # T9/T10 - stub
