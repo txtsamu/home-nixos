@@ -10,7 +10,10 @@ Execution is tracked as tickets T1–T20 there: [txtsamu/claude-research#9–#28
 - `flake.nix` — inputs: nixpkgs (26.05), disko, agenix
 - `hosts/home/configuration.nix` — base config; imports every module below
 - `hosts/home/disko.nix` — declarative disk layout
-- `hosts/home/{secrets,dns,proxy,tunnel,vpn,evomem,mcp,tiktok-bot,k3s}.nix` — one module per remaining ticket, stubs until that ticket lands
+- `hosts/home/secrets.nix` — agenix wiring (T2, done): declares `age.secrets.*` pointing at `../../secrets/*.age`
+- `secrets/secrets.nix` — agenix recipients manifest (which SSH host key(s) can decrypt which `.age` file); see comments there for the edit workflow
+- `secrets/*.age` — encrypted secrets, safe to commit
+- `hosts/home/{dns,proxy,tunnel,vpn,evomem,mcp,tiktok-bot,k3s}.nix` — one module per remaining ticket, stubs until that ticket lands
 
 ## Bootstrap
 
