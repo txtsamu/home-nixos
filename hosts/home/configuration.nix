@@ -50,10 +50,13 @@ in
   networking.useDHCP = false;
   networking.interfaces.eth0.ipv4.addresses = [
     {
-      # TEMP IP for parallel build/verification (plan §4 phase 2-3).
-      # Cutover ticket (T19, txtsamu/claude-research#27) moves this to
-      # warp-vm's current 192.168.50.200/24 once every service is verified.
-      address = "192.168.50.202";
+      # T19 (txtsamu/claude-research#27): cutover. This was the temp
+      # parallel-build IP 192.168.50.202 (plan §4 phase 2-3) until every
+      # service on `home` was verified working; now the real, permanent
+      # LAN IP, taken over from `warp-vm` once its own remaining services
+      # (technitium/caddy/cloudflared/netbird/evomem/hermes/proxmox-mcp)
+      # were stopped and its network interface brought down to free it.
+      address = "192.168.50.200";
       prefixLength = 24;
     }
   ];
