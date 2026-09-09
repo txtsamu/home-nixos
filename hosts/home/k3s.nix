@@ -51,6 +51,19 @@
 
   networking.firewall.allowedTCPPorts = [ 6443 ];
 
+  # NFS client support - needed for the plain-NFS PVs some apps use
+  # alongside democratic-csi's iSCSI-backed ones (photos-nfs, immich-nfs,
+  # nextcloud-nfs, all served from the same TrueNAS box at 192.168.50.10).
+  # Real bug hit while working T14 (txtsamu/claude-research#22): without
+  # this, kubelet's NFS mount fails outright - "NFS: mount program didn't
+  # pass remote address" - because NixOS doesn't wire up NFS client support
+  # (rpcbind + the nfs kernel module/mount.nfs helper) by default the way
+  # Debian does. The plan doc's original T1 inventory actually flagged this
+  # dependency (rpcbind/nfs-blkmap "needed for ... the /mnt/photos NFS
+  # mount") but it never got wired into a module until now.
+  boot.supportedFilesystems = [ "nfs" ];
+  services.rpcbind.enable = true;
+
   # democratic-csi's node plugin hostPath-mounts this in (iscsiDirHostPath in
   # its Helm values, matching warp-vm's convention) - unlike Debian, NixOS
   # doesn't create /var/iscsi implicitly, so the node pod's mount silently
