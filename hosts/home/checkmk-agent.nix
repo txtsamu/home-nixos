@@ -131,6 +131,14 @@ in
       MK_RUN_ASYNC_PARTS = "false";
       MK_READ_REMOTE = "true";
     };
+    # warp-vm's Debian image has /usr/bin/python3 on the default PATH,
+    # which the agent script auto-detects and reports as
+    # `FailedPythonReason: ` (empty = found). Confirmed via a live raw
+    # socket read that home reported "No suitable python installation
+    # found" without this - a real capability gap vs. warp-vm (matters
+    # if any Python-based local/plugin script is ever added later, even
+    # though neither host has one today).
+    path = [ pkgs.python3 ];
     serviceConfig = {
       ExecStart = "-${checkMkAgent}";
       Type = "simple";
@@ -149,6 +157,7 @@ in
       MK_RUN_SYNC_PARTS = "false";
       MK_LOOP_INTERVAL = "60";
     };
+    path = [ pkgs.python3 ];
     serviceConfig = {
       ExecStart = checkMkAgent;
       Type = "simple";
