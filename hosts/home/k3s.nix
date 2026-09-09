@@ -34,6 +34,16 @@
       # real enforcement, and --disable-network-policy is k3s's own
       # documented fix for this exact controller/CNI conflict class.
       "--disable-network-policy"
+      # Same root cause hits kube-proxy too, non-fatally but functionally:
+      # its default iptables mode goes through the same iptables-nft
+      # translation shim, so it was logging "Sync failed" on the
+      # FORWARD->KUBE-EXTERNAL-SERVICES chain jump every 30s and silently
+      # not maintaining its rules - exactly the chain LoadBalancer/NodePort
+      # external traffic needs. Switch kube-proxy itself to Kubernetes'
+      # native nftables backend (GA since k8s 1.33, this is 1.35) instead
+      # of the iptables-compat shim - avoids the translation layer
+      # entirely rather than working around symptoms of it.
+      "--kube-proxy-arg=proxy-mode=nftables"
     ];
   };
 
