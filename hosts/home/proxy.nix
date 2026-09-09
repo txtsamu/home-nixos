@@ -52,9 +52,16 @@
       reverse_proxy 192.168.50.232:80
     '';
 
+    # Real bug found post-cutover (2026-09-10): this pointed at warp-vm's
+    # own Rancher (LoadBalancer IP .220), which went away when warp-vm was
+    # shut down in T19. home has its own Rancher (bootstrapped as part of
+    # the platform layer in T13) but it was only ever given a ClusterIP,
+    # never exposed via a MetalLB LoadBalancer IP - repointed directly at
+    # that ClusterIP instead, confirmed reachable from the host network
+    # (kube-proxy's rules apply node-wide, not just inside pod netns).
     virtualHosts."rancher.lan".extraConfig = ''
       tls internal
-      reverse_proxy https://192.168.50.220 {
+      reverse_proxy https://10.43.126.48 {
         header_up Host {host}
         transport http {
           tls_insecure_skip_verify
