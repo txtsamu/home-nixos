@@ -16,6 +16,7 @@ in
     ./evomem.nix     # T7  - done
     ./mcp.nix        # T8  - done
     ./camofox.nix    # T9  - done
+    ./headroom.nix   # T11 - done
     ./tiktok-bot.nix # T10 - done
     ./k3s.nix        # T13 - done
   ];
