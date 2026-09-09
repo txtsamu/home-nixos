@@ -64,6 +64,16 @@
   boot.supportedFilesystems = [ "nfs" ];
   services.rpcbind.enable = true;
 
+  # ...that fix alone wasn't enough: k3s.service's systemd unit has its own
+  # narrow, hardcoded PATH (coreutils/findutils/gnugrep/gnused/systemd
+  # only) that doesn't include /run/current-system/sw/bin, so kubelet still
+  # couldn't find mount.nfs even once it existed on the system - manually
+  # running the exact same mount command as root succeeded immediately,
+  # which is what pointed at PATH rather than NFS support itself being
+  # broken. systemd.services.<name>.path extends a unit's PATH without
+  # having to hand-list every other binary already implicitly available.
+  systemd.services.k3s.path = [ pkgs.nfs-utils ];
+
   # democratic-csi's node plugin hostPath-mounts this in (iscsiDirHostPath in
   # its Helm values, matching warp-vm's convention) - unlike Debian, NixOS
   # doesn't create /var/iscsi implicitly, so the node pod's mount silently
