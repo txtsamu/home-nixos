@@ -19,6 +19,7 @@ in
     ./headroom.nix   # T11 - done
     ./tiktok-bot.nix # T10 - done
     ./k3s.nix        # T13 - done
+    ./checkmk-agent.nix # T12 - done
   ];
 
   # Fix for initrd hang on boot: this VM uses a virtio-scsi-pci controller
