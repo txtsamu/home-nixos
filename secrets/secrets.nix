@@ -14,4 +14,5 @@ let
 in
 {
   "cloudflare-tunnel-token.age".publicKeys = [ home ];
+  "technitium-admin-password.age".publicKeys = [ home ];
 }
