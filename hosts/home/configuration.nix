@@ -10,7 +10,7 @@ in
   imports = [
     ./secrets.nix    # T2  - stub, real content lands with T2
     ./dns.nix        # T3  - done
-    ./proxy.nix      # T4  - stub
+    ./proxy.nix      # T4  - done
     ./tunnel.nix     # T5  - stub
     ./vpn.nix        # T6  - stub
     ./evomem.nix     # T7  - done
