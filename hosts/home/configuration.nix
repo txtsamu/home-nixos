@@ -8,14 +8,15 @@ let
 in
 {
   imports = [
-    ./secrets.nix    # T2  - stub, real content lands with T2
+    ./secrets.nix    # T2  - done
     ./dns.nix        # T3  - done
     ./proxy.nix      # T4  - done
     ./tunnel.nix     # T5  - done
     ./vpn.nix        # T6  - done
     ./evomem.nix     # T7  - done
-    ./mcp.nix        # T8  - stub
-    ./tiktok-bot.nix # T9/T10 - stub
+    ./mcp.nix        # T8  - done
+    ./camofox.nix    # T9  - done
+    ./tiktok-bot.nix # T10 - stub
     ./k3s.nix        # T13 - done
   ];
 

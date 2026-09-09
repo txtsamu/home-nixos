@@ -17,4 +17,5 @@ in
   "technitium-admin-password.age".publicKeys = [ home ];
   "netbird-setup-key.age".publicKeys = [ home ];
   "proxmox-mcp-config.age".publicKeys = [ home ];
+  "camofox-api-key.age".publicKeys = [ home ];
 }
