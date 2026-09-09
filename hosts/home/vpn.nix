@@ -44,7 +44,12 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.netbird}/bin/netbird up --management-url https://vpn.ssamu.id:443 --setup-key-file ${config.age.secrets.netbird-setup-key.path}";
+      # Real bug hit: `netbird up`'s own built-in --daemon-addr default
+      # doesn't match `netbird.service`'s explicit unix:///var/run/netbird.sock
+      # (differs by installed version - nixpkgs' netbird-client-0.71.4
+      # defaults to /var/run/netbird/sock, a different path entirely).
+      # Pass it explicitly so both sides agree regardless of version defaults.
+      ExecStart = "${pkgs.netbird}/bin/netbird up --daemon-addr unix:///var/run/netbird.sock --management-url https://vpn.ssamu.id:443 --setup-key-file ${config.age.secrets.netbird-setup-key.path}";
     };
   };
 
