@@ -49,4 +49,11 @@
   age.secrets.proxmox-mcp-config = {
     file = ../../secrets/proxmox-mcp-config.age;
   };
+
+  # T9 (txtsamu/claude-research#17): consumed by camofox.nix as an
+  # EnvironmentFile (KEY=VALUE format, same pattern as T3's
+  # technitium-admin-password) for camofox-browser's CAMOFOX_API_KEY.
+  age.secrets.camofox-api-key = {
+    file = ../../secrets/camofox-api-key.age;
+  };
 }
