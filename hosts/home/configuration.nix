@@ -19,6 +19,18 @@ in
     ./k3s.nix        # T13 - stub
   ];
 
+  # Fix for initrd hang on boot: this VM uses a virtio-scsi-pci controller
+  # (Proxmox `scsihw: virtio-scsi-pci`), so the initrd needs virtio_scsi
+  # loaded early or /dev/disk/by-partlabel/disk-main-root never appears.
+  # Hand-written config, never ran nixos-generate-config to auto-detect this.
+  boot.initrd.availableKernelModules = [
+    "virtio_pci"
+    "virtio_scsi"
+    "virtio_blk"
+    "sd_mod"
+    "sr_mod"
+  ];
+
   networking.hostName = "home";
   # Predictable interface names disabled to match warp-vm's `eth0` (its cloud
   # image also disables them) - avoids depending on virtio PCI enumeration.
