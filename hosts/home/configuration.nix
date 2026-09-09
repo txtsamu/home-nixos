@@ -9,7 +9,7 @@ in
 {
   imports = [
     ./secrets.nix    # T2  - stub, real content lands with T2
-    ./dns.nix        # T3  - stub
+    ./dns.nix        # T3  - done
     ./proxy.nix      # T4  - stub
     ./tunnel.nix     # T5  - stub
     ./vpn.nix        # T6  - stub
@@ -55,13 +55,19 @@ in
     }
   ];
   networking.defaultGateway = "192.168.50.1";
-  # Primary LAN resolver first; public fallbacks after it. The LAN resolver
-  # (192.168.50.80) has an unexplained quirk where it accepts queries from
-  # new/unfamiliar IPs but silently fails public-domain lookups (hit during
-  # T1 bootstrap - see txtsamu/claude-research#9). Revisit once T3 stands up
-  # Technitium on `home` itself; for now this replaces the manual
-  # /etc/resolv.conf edit made during bootstrap with a declarative fallback.
-  networking.nameservers = [ "192.168.50.80" "1.1.1.1" "8.8.8.8" ];
+  # Primary LAN resolver first; public fallbacks after it.
+  #
+  # Real bug found while working T3 (txtsamu/claude-research#11): this was
+  # "192.168.50.80" until now, carried over from T1's bootstrap-time
+  # /etc/resolv.conf without ever being verified against the live service.
+  # .80 doesn't answer DNS at all (times out) - warp-vm's actual Technitium
+  # instance listens on warp-vm's own primary IP, .200 (host networking,
+  # confirmed via `nslookup nas.lan 192.168.50.200`). The T1-era quirk about
+  # accepting LAN queries but silently failing public-domain lookups (see
+  # #9) was real and is still worth remembering once `home`'s own
+  # Technitium (T3) is what everyone actually queries - just filed under
+  # the wrong IP until this fix.
+  networking.nameservers = [ "192.168.50.200" "1.1.1.1" "8.8.8.8" ];
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
 

@@ -17,4 +17,10 @@
   age.secrets.cloudflare-tunnel-token = {
     file = ../../secrets/cloudflare-tunnel-token.age;
   };
+
+  # T3 (txtsamu/claude-research#11): consumed by dns.nix as an
+  # EnvironmentFile (KEY=VALUE format) for technitium-dns-server.
+  age.secrets.technitium-admin-password = {
+    file = ../../secrets/technitium-admin-password.age;
+  };
 }
