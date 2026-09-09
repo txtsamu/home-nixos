@@ -22,6 +22,18 @@
       "--disable=traefik"
       "--disable=servicelb"
       "--write-kubeconfig-mode=644"
+      # Real bug hit while working T14 (txtsamu/claude-research#22): k3s's
+      # bundled kube-router network-policy controller crash-loops the
+      # entire k3s.service against MetalLB's nftables rules - a known,
+      # unresolved upstream issue (k3s-io/k3s#11493, explicitly reported
+      # "in environments using metallb with L2Advertisement", exactly this
+      # setup). Symptom was intermittent, confusing "connection refused"
+      # errors from kubectl (the API server was actually restarting under
+      # it). warp-vm's cluster only has one trivial no-op NetworkPolicy
+      # (cattle-fleet-local-system/default-allow-all) - nothing relies on
+      # real enforcement, and --disable-network-policy is k3s's own
+      # documented fix for this exact controller/CNI conflict class.
+      "--disable-network-policy"
     ];
   };
 
