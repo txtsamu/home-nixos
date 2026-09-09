@@ -66,6 +66,17 @@ in
   users.users.cmk-agent = {
     isSystemUser = true;
     group = "cmk-agent";
+    # Real bug hit standing this up: cmk-agent-ctl resolves its config
+    # (cmk-agent-ctl.toml) and connection-registry (registered_connections.json,
+    # pre_configured_connections.json) paths relative to the running
+    # user's *home directory*, not a hardcoded /var/lib/cmk-agent path -
+    # confirmed via `RUST_LOG=debug`, which showed it silently reading
+    # (and finding nothing at) /var/empty/registered_connections.json.
+    # NixOS system users default to /var/empty; warp-vm's Debian package
+    # sets this user's home to /var/lib/cmk-agent explicitly (confirmed
+    # via `getent passwd`), which is what makes all the state files below
+    # actually get found.
+    home = "/var/lib/cmk-agent";
   };
 
   # Placed at the same literal FHS paths Checkmk's own binaries assume
