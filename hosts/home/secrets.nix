@@ -38,4 +38,15 @@
   age.secrets.netbird-setup-key = {
     file = ../../secrets/netbird-setup-key.age;
   };
+
+  # T8 (txtsamu/claude-research#16): full proxmox-mcp-plus config.json
+  # (contains the Proxmox API token). Encrypted as a whole - cleanest, and
+  # keeps the token out of plaintext on disk. Materialized at
+  # /run/agenix/proxmox-mcp-config and consumed by mcp.nix as
+  # PROXMOX_MCP_CONFIG. Recreated from warp-vm's live
+  # /etc/proxmoxmcp/config.json verbatim (host 192.168.50.30:8006,
+  # service PVE, token MCPPlus) - see mcp.nix for the unit.
+  age.secrets.proxmox-mcp-config = {
+    file = ../../secrets/proxmox-mcp-config.age;
+  };
 }

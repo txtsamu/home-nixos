@@ -16,4 +16,5 @@ in
   "cloudflare-tunnel-credentials.age".publicKeys = [ home ];
   "technitium-admin-password.age".publicKeys = [ home ];
   "netbird-setup-key.age".publicKeys = [ home ];
+  "proxmox-mcp-config.age".publicKeys = [ home ];
 }
