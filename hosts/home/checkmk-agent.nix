@@ -84,8 +84,21 @@ in
     "d /var/lib/cmk-agent 0750 cmk-agent cmk-agent -"
     # Enables cmk-agent-ctl's legacy (unregistered, unencrypted) pull
     # mode - matches every other host in Checkmk's inventory, none of
-    # which use TLS registration.
+    # which use TLS registration. Content doesn't matter (cmk-agent-ctl
+    # only checks for the file's existence), an empty file is fine.
     "f /var/lib/cmk-agent/allow-legacy-pull 0644 cmk-agent cmk-agent -"
+    # Real bug hit standing this up: without this file, `cmk-agent-ctl
+    # daemon` starts and stays "active (running)" - no crash, no error
+    # logged - but never actually binds port 6556. warp-vm's copy of
+    # this file holds the (registration-free) connection-state schema
+    # cmk-agent-ctl expects to find on disk; it needs to exist, even
+    # with all three keys empty, for the daemon to proceed to opening
+    # its pull listener.
+    # `F` (not `f`) - the empty file this same rule created in the
+    # previous, broken activation won't get overwritten by a mere `f`
+    # (which only sets content on first creation); `F` always
+    # (re)writes the given content.
+    "F /var/lib/cmk-agent/registered_connections.json 0600 cmk-agent cmk-agent - {\"push\":{},\"pull\":{},\"pull_imported\":[]}"
   ];
 
   systemd.sockets.check-mk-agent = {
