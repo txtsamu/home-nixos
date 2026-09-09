@@ -13,7 +13,7 @@ in
     ./proxy.nix      # T4  - stub
     ./tunnel.nix     # T5  - stub
     ./vpn.nix        # T6  - stub
-    ./evomem.nix     # T7  - stub
+    ./evomem.nix     # T7  - done
     ./mcp.nix        # T8  - stub
     ./tiktok-bot.nix # T9/T10 - stub
     ./k3s.nix        # T13 - stub
