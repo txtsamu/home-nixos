@@ -31,6 +31,15 @@ in
     "sr_mod"
   ];
 
+  # Matches warp-vm. Real bug hit standing up T13 (k3s): leaving this unset
+  # means NixOS never creates /etc/localtime at all (not even a UTC
+  # symlink), and containerd's default bind-mount of the host's
+  # /etc/localtime into every pod then fails outright ("error mounting
+  # /etc/localtime to rootfs ... not a directory") - broke democratic-csi's
+  # node pod specifically. Needed on any NixOS host that runs k3s/containerd,
+  # not just this one.
+  time.timeZone = "Asia/Jakarta";
+
   networking.hostName = "home";
   # Predictable interface names disabled to match warp-vm's `eth0` (its cloud
   # image also disables them) - avoids depending on virtio PCI enumeration.
