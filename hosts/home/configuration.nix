@@ -73,7 +73,7 @@ in
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  environment.systemPackages = with pkgs; [ git vim curl ];
+  environment.systemPackages = with pkgs; [ git vim curl fastfetch ];
 
   system.stateVersion = "26.05";
 }
