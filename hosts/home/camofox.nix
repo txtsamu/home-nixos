@@ -22,6 +22,14 @@
 # binaries.
 { config, pkgs, ... }:
 {
+  # steam-run pulls in steam-unwrapped, which nixpkgs marks unfree - real
+  # bug hit on first switch: evaluation fails outright without an explicit
+  # allow. Scoped to just this one package rather than a blanket
+  # nixpkgs.config.allowUnfree = true, matching this migration's pattern
+  # of minimal, deliberate changes.
+  nixpkgs.config.allowUnfreePredicate =
+    pkg: builtins.elem (pkgs.lib.getName pkg) [ "steam-unwrapped" "steam-run" ];
+
   systemd.services.camofox-browser = {
     description = "Camofox Browser Server (anti-detection headless browser for AI agents)";
     after = [ "network-online.target" ];
