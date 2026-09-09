@@ -14,8 +14,14 @@
 # encrypt -> commit -> decrypt-on-activation path works end to end.
 { ... }:
 {
-  age.secrets.cloudflare-tunnel-token = {
-    file = ../../secrets/cloudflare-tunnel-token.age;
+  # T5 (txtsamu/claude-research#13) superseded this: warp-vm's token was
+  # never actually usable (Cloudflare Tunnel needs a *fresh* tunnel bound to
+  # `home`, not a shared token - two cloudflared instances can't run the
+  # same tunnel identity). Replaced by cloudflare-tunnel-credentials below,
+  # a real "home"-named tunnel's credentials.json content, consumed by
+  # services.cloudflared's native credentialsFile option (tunnel.nix).
+  age.secrets.cloudflare-tunnel-credentials = {
+    file = ../../secrets/cloudflare-tunnel-credentials.age;
   };
 
   # T3 (txtsamu/claude-research#11): consumed by dns.nix as an

@@ -11,7 +11,7 @@ in
     ./secrets.nix    # T2  - stub, real content lands with T2
     ./dns.nix        # T3  - done
     ./proxy.nix      # T4  - done
-    ./tunnel.nix     # T5  - stub
+    ./tunnel.nix     # T5  - done
     ./vpn.nix        # T6  - stub
     ./evomem.nix     # T7  - done
     ./mcp.nix        # T8  - stub

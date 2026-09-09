@@ -13,6 +13,6 @@ let
   home = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICuMl1a2ZkqmctvGNjASFAYSzrSWyDWwxcCBdF51lnXn";
 in
 {
-  "cloudflare-tunnel-token.age".publicKeys = [ home ];
+  "cloudflare-tunnel-credentials.age".publicKeys = [ home ];
   "technitium-admin-password.age".publicKeys = [ home ];
 }
