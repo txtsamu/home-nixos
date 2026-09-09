@@ -46,7 +46,13 @@ in
     }
   ];
   networking.defaultGateway = "192.168.50.1";
-  networking.nameservers = [ "192.168.50.80" ];
+  # Primary LAN resolver first; public fallbacks after it. The LAN resolver
+  # (192.168.50.80) has an unexplained quirk where it accepts queries from
+  # new/unfamiliar IPs but silently fails public-domain lookups (hit during
+  # T1 bootstrap - see txtsamu/claude-research#9). Revisit once T3 stands up
+  # Technitium on `home` itself; for now this replaces the manual
+  # /etc/resolv.conf edit made during bootstrap with a declarative fallback.
+  networking.nameservers = [ "192.168.50.80" "1.1.1.1" "8.8.8.8" ];
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
 
