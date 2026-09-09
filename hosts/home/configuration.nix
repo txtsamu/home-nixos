@@ -16,7 +16,7 @@ in
     ./evomem.nix     # T7  - done
     ./mcp.nix        # T8  - stub
     ./tiktok-bot.nix # T9/T10 - stub
-    ./k3s.nix        # T13 - stub
+    ./k3s.nix        # T13 - done
   ];
 
   # Fix for initrd hang on boot: this VM uses a virtio-scsi-pci controller
