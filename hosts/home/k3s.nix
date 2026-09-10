@@ -44,6 +44,17 @@
       # of the iptables-compat shim - avoids the translation layer
       # entirely rather than working around symptoms of it.
       "--kube-proxy-arg=proxy-mode=nftables"
+      # Paired with configuration.nix's swapfile addition (real memory
+      # overcommit on this box - Checkmk flags CRIT at 157% committed).
+      # kubelet refuses to start at all on a node with swap enabled
+      # unless told otherwise - this isn't optional once swapDevices is
+      # non-empty. Deliberately not also setting
+      # --kubelet-arg=feature-gates=NodeSwap=true: that would let pod
+      # cgroups use swap directly, which is still rough upstream (real
+      # reports of pods ignoring configured swap limits in current k3s)
+      # and isn't needed for the actual goal - a host-level safety net
+      # against OOM-killer thrashing, not per-pod swap accounting.
+      "--kubelet-arg=fail-swap-on=false"
     ];
   };
 
