@@ -100,6 +100,30 @@ in
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  # 8G swapfile on the root disk (38G free at the time this was added,
+  # 16GiB physical RAM, real overcommit already observed - Checkmk flags
+  # memory CRIT at 157% committed across all containers). A host-level
+  # safety net against OOM-killer thrashing under bursty load, not meant
+  # to be worked hard continuously.
+  #
+  # Real gotcha this needed pairing with: k3s.nix's kubelet-arg below.
+  # kubelet refuses to start at all on a node with swap enabled unless
+  # explicitly told to tolerate it (`--fail-swap-on=false`) - adding a
+  # swapfile without that flag would have broken the whole cluster again,
+  # the same class of "one change, unexpected blast radius" as the T19
+  # node-IP/MetalLB incident. Deliberately *not* enabling the NodeSwap
+  # feature gate alongside it - that would let individual pod cgroups use
+  # swap directly, which is still rough in current k3s/kubelet (real
+  # upstream reports of pods ignoring configured swap limits) and isn't
+  # needed for the actual goal here (host-level headroom, not per-pod
+  # swap accounting).
+  swapDevices = [
+    {
+      device = "/var/lib/swapfile";
+      size = 8 * 1024;
+    }
+  ];
+
   environment.systemPackages = with pkgs; [ git vim curl fastfetch htop btop ];
 
   system.stateVersion = "26.05";
