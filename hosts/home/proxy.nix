@@ -147,6 +147,15 @@
       tls internal
       reverse_proxy 127.0.0.1:5380
     '';
+
+    # Perses dashboard (metrics visualization on top of the VictoriaMetrics
+    # instance from home-k8s-resource-rightsizing-victoriametrics.md).
+    # Same ClusterIP-direct pattern as rancher.lan above - plain HTTP
+    # backend, no TLS transport block needed.
+    virtualHosts."perses.lan".extraConfig = ''
+      tls internal
+      reverse_proxy 10.43.155.107:8080
+    '';
   };
 
   networking.firewall.allowedTCPPorts = [ 80 443 ];
