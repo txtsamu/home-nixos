@@ -30,6 +30,18 @@ in
   # interpreter and gateway node usage stay available (GC roots).
   environment.systemPackages = [ pkgs.python313 pkgs.nodejs_22 ];
 
+  # `hermes update` shells out to its own vendored, dynamically-linked
+  # generic-Linux `uv` binary (/root/.hermes/bin/uv) for the dependency-
+  # install step - distinct from the Nix-packaged uv used to build the venv
+  # above, and NixOS can't run it without a loader shim. Hit this twice
+  # (2026-09-17, 2026-09-18) needing a manual per-update workaround each
+  # time (see txtsamu/claude-research: hermes-update-broken-git-and-nixos-uv.md).
+  # nix-ld is nix.dev's own documented general fix for exactly this error
+  # class ("NixOS cannot run dynamically linked executables intended for
+  # generic linux environments") - fixes it permanently and for any future
+  # similarly-vendored binary, not just uv.
+  programs.nix-ld.enable = true;
+
   systemd.services.hermes-gateway = {
     description = "Hermes Agent Gateway - Messaging Platform Integration";
     after = [ "network-online.target" ];
