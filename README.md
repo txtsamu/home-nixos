@@ -7,13 +7,35 @@ Execution is tracked as tickets T1–T20 there: [txtsamu/claude-research#9–#28
 
 ## Layout
 
-- `flake.nix` — inputs: nixpkgs (26.05), disko, agenix
-- `hosts/home/configuration.nix` — base config; imports every module below
+- `flake.nix` — inputs: nixpkgs (26.05), disko, agenix. Outputs: `nixosConfigurations.home`, a `checks` entry that evaluates it (what `nix flake check` and CI run), and `formatter`
+- `hosts/home/configuration.nix` — base config: static networking + `networking.extraHosts` LAN short names, users/SSH, swap, nix settings (flakes enabled, store auto-optimise, weekly GC); imports every module below
+- `hosts/home/keys/admin.pub` — authorized key(s) for `moo` and `root`
 - `hosts/home/disko.nix` — declarative disk layout
-- `hosts/home/secrets.nix` — agenix wiring (T2, done): declares `age.secrets.*` pointing at `../../secrets/*.age`
-- `secrets/secrets.nix` — agenix recipients manifest (which SSH host key(s) can decrypt which `.age` file); see comments there for the edit workflow
+- `hosts/home/secrets.nix` — agenix wiring: declares `age.secrets.*` pointing at `../../secrets/*.age`
+- `secrets/secrets.nix` — agenix recipients manifest (which host key / age key can decrypt which `.age` file); see the comments there for the edit and rekey workflow
 - `secrets/*.age` — encrypted secrets, safe to commit
-- `hosts/home/{dns,proxy,tunnel,vpn,evomem,mcp,tiktok-bot,k3s}.nix` — one module per remaining ticket, stubs until that ticket lands
+- `hosts/home/{dns,proxy,tunnel,vpn,evomem,mcp,camofox,headroom,tiktok-bot,k3s,checkmk-agent}.nix` — one module per ticket
+- `provision/` — what the flake does **not** build (the `/opt` venvs, hand-copied binaries and browser dir the units point at), with `pip freeze` snapshots and recreation steps. Read it before assuming a rebuild reproduces this host
+
+## Deploying a change
+
+Build from the repo, never from a local checkout on the host (a checkout on the
+host silently drifts from `main` and the next repo-based switch reverts it):
+
+```
+nixos-rebuild switch --flake github:txtsamu/home-nixos#home --refresh
+```
+
+`nix flake check` evaluates the config without touching the running system —
+run it before switching. CI (`.github/workflows/ci.yml`) runs the same check on
+every push and PR.
+
+## Secrets
+
+Two agenix recipients: `home`'s own SSH host key (normal activation-time
+decryption) and an offline age recovery key. Losing the host key therefore does
+not lose the secrets, and `agenix -e` works from any machine holding the
+recovery key. See [`secrets/secrets.nix`](secrets/secrets.nix).
 
 ## Bootstrap
 

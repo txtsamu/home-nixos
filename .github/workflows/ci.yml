@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  flake-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+
+      # Evaluates nixosConfigurations.home plus the flake's outputs in full.
+      # Catches a module that stops evaluating, a renamed/removed option, a bad
+      # agenix path or an unfree-package mismatch before it reaches the live host.
+      #
+      # --no-build on purpose: a full `nix flake check` also *builds* the
+      # formatter (nixfmt), which drags in a GHC toolchain and is useless here -
+      # evaluation is what this job is for.
+      - name: nix flake check
+        run: nix flake check --no-build -L
+
+      - name: show evaluated system drv (cheap smoke signal)
+        run: |
+          nix eval --raw .#nixosConfigurations.home.config.system.build.toplevel.drvPath
+          echo
