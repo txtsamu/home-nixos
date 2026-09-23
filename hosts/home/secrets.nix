@@ -5,21 +5,14 @@
 # activation time to /run/agenix/<name> (root:root, mode 0400 by default),
 # never into the world-readable Nix store.
 #
-# cloudflare-tunnel-token is the pathfinder secret for this bootstrap: pulled
-# fresh from warp-vm's live `cloudflared.service` ExecStart (plan's §2.1 note
-# - ~6 real secrets total, ported one at a time as their owning ticket lands).
-# Not consumed by any service yet - that's T5 (txtsamu/claude-research#13),
-# which will point cloudflared's unit at config.age.secrets.cloudflare-tunnel-token.path
-# instead of an inline plaintext token. This ticket only proves the
-# encrypt -> commit -> decrypt-on-activation path works end to end.
+# One declaration per secret; each names the module that consumes it.
 { ... }:
 {
-  # T5 (txtsamu/claude-research#13) superseded this: warp-vm's token was
-  # never actually usable (Cloudflare Tunnel needs a *fresh* tunnel bound to
-  # `home`, not a shared token - two cloudflared instances can't run the
-  # same tunnel identity). Replaced by cloudflare-tunnel-credentials below,
-  # a real "home"-named tunnel's credentials.json content, consumed by
-  # services.cloudflared's native credentialsFile option (tunnel.nix).
+  # T5 (txtsamu/claude-research#13): a real "home"-named tunnel's
+  # credentials.json content, consumed by services.cloudflared's native
+  # credentialsFile option (tunnel.nix). warp-vm's token-style tunnel
+  # could not be reused - two cloudflared instances cannot share one
+  # tunnel identity.
   age.secrets.cloudflare-tunnel-credentials = {
     file = ../../secrets/cloudflare-tunnel-credentials.age;
   };
