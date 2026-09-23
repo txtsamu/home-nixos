@@ -33,6 +33,12 @@
   systemd.services.camofox-browser = {
     description = "Camofox Browser Server (anti-detection headless browser for AI agents)";
     after = [ "network-online.target" ];
+    # Without this the unit is *ordered* after network-online.target but not
+    # pulled in by it, which systemd flags at build time ("ordered after
+    # 'network-online.target' but doesn't depend on it"). The service only
+    # needs the network for its own outbound fetches, so a plain wants is
+    # enough - no hard requires.
+    wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     environment = {
       NODE_ENV = "production";
