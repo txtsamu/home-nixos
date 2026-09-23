@@ -39,6 +39,23 @@
       User = "moo";
       ExecStart = "/opt/headroom-proxy/venv/bin/headroom proxy";
       Restart = "on-failure";
+      # Sandbox (config audit). Only ~/.headroom (SQLite compression cache +
+      # savings stats) is writable. Verified before shipping: replica on
+      # 127.0.0.1:8799 under this exact option set started and served
+      # /livez 200 (it needs ~9s to load its onnxruntime models, so the first
+      # probes 000 - that is startup time, not the sandbox).
+
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectSystem = "strict";
+      ProtectHome = "read-only";
+      ProtectKernelTunables = true;
+      ProtectControlGroups = true;
+      ProtectClock = true;
+      RestrictSUIDSGID = true;
+      LockPersonality = true;
+      RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
+      ReadWritePaths = [ "/home/moo/.headroom" ];
     };
   };
 
