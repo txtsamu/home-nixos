@@ -43,8 +43,10 @@
         echo "${home.config.system.build.toplevel.drvPath}" > $out
       '';
 
-      # `nix fmt` - nixfmt-rfc-style is the official RFC 166 formatter, the
-      # same one nixpkgs uses.
-      formatter.${system} = pkgs.nixfmt-rfc-style;
+      # `nix fmt` - nixfmt is the official RFC 166 formatter (the same one
+      # nixpkgs uses). Note `nix flake check` *builds* every formatter output it
+      # finds, and that pulls in a GHC toolchain, so CI runs
+      # `nix flake check --no-build` and only evaluates it there.
+      formatter.${system} = pkgs.nixfmt;
     };
 }
