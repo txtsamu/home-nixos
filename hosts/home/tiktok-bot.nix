@@ -33,7 +33,7 @@
 #   path; this venv is python3.13. Applied the one-line fix directly
 #   (gen_real_msToken -> gen_false_msToken in the except block) instead
 #   of fighting the script's version assumption.
-{ ... }:
+{ config, ... }:
 {
   fileSystems."/mnt/photos" = {
     device = "192.168.50.10:/mnt/data/photos";
@@ -56,7 +56,10 @@
     serviceConfig = {
       Type = "simple";
       WorkingDirectory = "/opt/tiktok-bot";
-      EnvironmentFile = "/run/agenix/camofox-api-key";
+      # Same secret camofox-browser itself reads - via the agenix path
+      # instead of a hardcoded /run/agenix/... string, so a rename in
+      # secrets.nix cannot silently leave this unit pointing at nothing.
+      EnvironmentFile = config.age.secrets.camofox-api-key.path;
       ExecStart = "/opt/tiktok-bot-venv/bin/python3 /opt/tiktok-bot/tiktok_bot.py";
       Restart = "always";
       RestartSec = 10;
