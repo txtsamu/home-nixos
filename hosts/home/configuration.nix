@@ -3,9 +3,6 @@
 # under ./ and imports it below - dns.nix, proxy.nix, tunnel.nix, vpn.nix,
 # mcp.nix, tiktok-bot.nix, evomem.nix, k3s.nix, secrets.nix.
 { lib, pkgs, ... }:
-let
-  adminSshKey = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDd++c52S6U85veuAyNZ6j40u///FYsrLvZC0+N5VrIINOGNMUwQMOj7TORwuc+HP1f7PMkh7PqewE92OxSHtW6gyG++7TQg1QIfyqvoCpsqpDviSMF+NM35axDPeBVP/wzf5QzhSiguOKsj02rw66sfpS3nYnBll/SeKQwvpkfv9xGVYqJfmkvU5DLMpGh2Bg9hnwK+VTpjMignPvhrLRX4i+sUB3WtZWFUafmACLikzgnnUsX5L7ZcRvGJgaPMjTPy9yin/WIDFgSvLcSGqXkyh8mdVA/HrkzwhFhG161A/j+CrNbAdR1bSKJC3r2dW8V1u8b9eu31G8bIlqc2xVvlNpGRtsh94owYqCWYLE11srb0AesoVBo4T/9wAWl+MBRX9Y+rBetS09JzpgXeZGUJDwpyjlSWjLabKNcPyOpyU4Q1FoBAkbTarKrZ1p+a2xxrk4q7gEV1YpWtvv8N7jXCLpVBNtewRWfSA76a5ed+0jDyuSVkFZW4oOgrtmHBVs= administrator@WIN-EQ6G9ODFLE0";
-in
 {
   imports = [
     ./secrets.nix    # T2  - done
@@ -74,6 +71,34 @@ in
   # Technitium (T3) is what everyone actually queries - just filed under
   # the wrong IP until this fix.
   networking.nameservers = [ "192.168.50.200" "1.1.1.1" "8.8.8.8" ];
+
+  # Deliberate trade-off on the public fallbacks: they are only reached when
+  # Technitium itself is down, and during that window DNS filtering is bypassed
+  # (no blocklists). Kept as-is because resolution surviving a resolver
+  # restart matters more here than blocking during that window.
+  #
+  # LAN short names: Technitium's zone is a *suffix* (`nas.lan` exists, bare
+  # `nas` is NXDOMAIN) and the MikroTik DHCP network hands out no `search`
+  # domain, so bare names can only come from here - nsswitch consults `files`
+  # before `dns`. Same list every other homelab host keeps in /etc/hosts:
+  # ranked by IP, one name per line, sections kept. Source of truth is a live
+  # peer (`ssh moo@192.168.50.20 cat /etc/hosts`) - re-pull and diff before
+  # editing, a name at an IP does get replaced.
+  networking.extraHosts = ''
+    ### Home Network Hosts ###
+    192.168.50.1    mikrotik
+    192.168.50.10   nas
+    192.168.50.20   fedora
+    192.168.50.30   px1
+    192.168.50.40   arm1
+    192.168.50.41   arm2
+    192.168.50.42   arm3
+    192.168.50.43   arm4
+    192.168.50.50   px2
+
+    ### VPS ###
+    103.134.154.180 vpz
+  '';
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
 
@@ -92,9 +117,12 @@ in
   users.users.moo = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keys = [ adminSshKey ];
+    # Key material lives in ./keys/admin.pub (not inlined) so the same file can
+    # be handed to a new user or rotated with a one-file diff. Both accounts
+    # currently share it - split it per user if a second operator is added.
+    openssh.authorizedKeys.keyFiles = [ ./keys/admin.pub ];
   };
-  users.users.root.openssh.authorizedKeys.keys = [ adminSshKey ];
+  users.users.root.openssh.authorizedKeys.keyFiles = [ ./keys/admin.pub ];
   security.sudo.wheelNeedsPassword = false;
 
   boot.loader.systemd-boot.enable = true;
@@ -123,6 +151,33 @@ in
       size = 8 * 1024;
     }
   ];
+
+  # Flakes and nix-command: this host is *built* with
+  # `nixos-rebuild switch --flake github:txtsamu/home-nixos#home`, but Nix
+  # disables both features by default. Without this block every `nix`
+  # invocation on the box needs explicit --extra-experimental-features flags,
+  # so plain `nix flake check`, `nix run` and `nix profile install` (and any
+  # script wrapping them) fail on what looks like a broken install.
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  # Dedupe identical files across the store as they are written.
+  nix.settings.auto-optimise-store = true;
+
+  # Automatic store cleanup. Nothing collected the store before this
+  # (`nix-gc.service` was never enabled, /nix/store had grown to 4.9G with /
+  # at 60%). Weekly; generations older than 30 days go, the running system
+  # and its boot entry are never collected.
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
+  };
+
+  # `moo` is the operator account - every switch is run as `sudo nixos-rebuild`
+  # from it. trusted-users lets it use flake registries/substituters and build
+  # directly instead of being treated as an untrusted user. `root` is already
+  # in the module default, so only moo needs adding here.
+  nix.settings.trusted-users = [ "moo" ];
 
   environment.systemPackages = with pkgs; [ git vim curl fastfetch htop btop ];
 
