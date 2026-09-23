@@ -37,11 +37,19 @@
       # `nix flake check` (run in CI on every push/PR) evaluates this, so a
       # module that stops evaluating - bad option name, typo'd import, unfree
       # package without a declared predicate - fails there instead of at
-      # switch time on the live host. drvPath is a plain string: evaluating
-      # the config is the check, nothing is built.
-      checks.${system}.config-evaluates = pkgs.runCommand "home-config-evaluates" { } ''
-        echo "${home.config.system.build.toplevel.drvPath}" > $out
-      '';
+      # switch time on the live host.
+      #
+      # builtins.seq, *not* string interpolation: interpolating the drv path
+      # would make it a build input of this derivation, and a store path that
+      # was only computed, never realised, is not valid - which is exactly how
+      # the first CI run failed ('path ...-nixos-system-home-....drv is not
+      # valid'). seq forces the path string to be evaluated (i.e. the whole
+      # system config) while keeping it out of the closure.
+      checks.${system}.config-evaluates =
+        builtins.seq home.config.system.build.toplevel.drvPath
+          (pkgs.runCommand "home-config-evaluates" { } ''
+            echo ok > $out
+          '');
 
       # `nix fmt` - nixfmt is the official RFC 166 formatter (the same one
       # nixpkgs uses). Note `nix flake check` *builds* every formatter output it
