@@ -178,6 +178,15 @@ in
       User = "cmk-agent";
       Restart = "on-failure";
       UMask = "0077";
+      # Sandbox (config audit) - conservative: this daemon bridges the agent's
+      # Unix socket to :6556, and reads /var/lib/cmk-agent (its home, not
+      # touched by ProtectHome). The check_mk_agent script units are
+      # deliberately NOT sandboxed - they exist to report host-wide state
+      # (/proc, /sys, mounts), so restricting them would degrade the metrics
+      # this host is monitored on.
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = "read-only";
     };
   };
 

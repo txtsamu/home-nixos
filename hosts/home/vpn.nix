@@ -28,6 +28,14 @@
       RestartSec = 120;
       StateDirectory = "netbird";
       LogsDirectory = "netbird";
+      # Sandbox (config audit) - conservative on purpose: NetBird needs
+      # CAP_NET_ADMIN-style access to program nftables, create wt0 and set
+      # sysctls, and it may write /etc/resolv.conf, so ProtectSystem=strict
+      # would break its own network plumbing. What is left still blocks
+      # privilege escalation and /tmp sharing.
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = "read-only";
     };
   };
 
@@ -50,6 +58,9 @@
       # defaults to /var/run/netbird/sock, a different path entirely).
       # Pass it explicitly so both sides agree regardless of version defaults.
       ExecStart = "${pkgs.netbird}/bin/netbird up --daemon-addr unix:///var/run/netbird.sock --management-url https://vpn.ssamu.id:443 --setup-key-file ${config.age.secrets.netbird-setup-key.path}";
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = "read-only";
     };
   };
 
@@ -68,6 +79,9 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = "read-only";
     };
     path = [ pkgs.nftables ];
     script = ''

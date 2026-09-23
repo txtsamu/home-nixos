@@ -63,6 +63,13 @@
       ExecStart = "/opt/tiktok-bot-venv/bin/python3 /opt/tiktok-bot/tiktok_bot.py";
       Restart = "always";
       RestartSec = 10;
+      # Sandbox (config audit) - conservative subset only. The bot shells out
+      # to yt-dlp/ffmpeg/gallery-dl which write to /mnt/photos, /opt/tiktok-bot
+      # and their own caches, so a filesystem lockdown cannot be validated
+      # without a live download run; privilege escalation and /tmp sharing are
+      # still closed here.
+      NoNewPrivileges = true;
+      PrivateTmp = true;
     };
   };
 }

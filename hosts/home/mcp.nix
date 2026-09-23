@@ -104,6 +104,17 @@ in
       ExecStart = "${proxmoxVenv}/bin/proxmox-mcp-plus";
       Restart = "on-failure";
       RestartSec = "5";
+      # Sandbox (config audit) - deliberately the conservative subset.
+      # ProtectSystem=strict was tried and *fails*: the server runs with cwd=/
+      # and opens its state relative to that, so it writes /proxmox-jobs.sqlite3
+      # and /proxmox_mcp.log at the filesystem root (confirmed against the live
+      # process's /proc/<pid>/fd). Locking the filesystem down therefore needs
+      # it moved to a real state directory first - WorkingDirectory +
+      # StateDirectory + ReadWritePaths - which would relocate an existing job
+      # DB, so it is a separate change, not part of this audit.
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectHome = "read-only";
     };
   };
 
