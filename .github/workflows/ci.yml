@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  flake-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+
+      # Evaluates nixosConfigurations.home plus the flake's checks. Catches a
+      # module that stops evaluating, a renamed/removed option, a bad agenix
+      # path or an unfree-package mismatch before it reaches the live host.
+      - name: nix flake check
+        run: nix flake check -L
+
+      - name: show evaluated system drv (cheap smoke signal)
+        run: |
+          nix eval --raw .#nixosConfigurations.home.config.system.build.toplevel.drvPath
+          echo

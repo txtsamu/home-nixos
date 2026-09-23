@@ -9,15 +9,42 @@
     agenix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, disko, agenix, ... }: {
-    nixosConfigurations.home = nixpkgs.lib.nixosSystem {
+  outputs =
+    {
+      self,
+      nixpkgs,
+      disko,
+      agenix,
+      ...
+    }:
+    let
       system = "x86_64-linux";
-      modules = [
-        disko.nixosModules.disko
-        agenix.nixosModules.default
-        ./hosts/home/configuration.nix
-        ./hosts/home/disko.nix
-      ];
+      pkgs = nixpkgs.legacyPackages.${system};
+
+      home = nixpkgs.lib.nixosSystem {
+        inherit system;
+        modules = [
+          disko.nixosModules.disko
+          agenix.nixosModules.default
+          ./hosts/home/configuration.nix
+          ./hosts/home/disko.nix
+        ];
+      };
+    in
+    {
+      nixosConfigurations.home = home;
+
+      # `nix flake check` (run in CI on every push/PR) evaluates this, so a
+      # module that stops evaluating - bad option name, typo'd import, unfree
+      # package without a declared predicate - fails there instead of at
+      # switch time on the live host. drvPath is a plain string: evaluating
+      # the config is the check, nothing is built.
+      checks.${system}.config-evaluates = pkgs.runCommand "home-config-evaluates" { } ''
+        echo "${home.config.system.build.toplevel.drvPath}" > $out
+      '';
+
+      # `nix fmt` - nixfmt-rfc-style is the official RFC 166 formatter, the
+      # same one nixpkgs uses.
+      formatter.${system} = pkgs.nixfmt-rfc-style;
     };
-  };
 }
