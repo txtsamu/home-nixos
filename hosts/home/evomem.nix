@@ -73,6 +73,24 @@ in
       ExecStart = "/usr/local/bin/evomem --knowledge /root/evomem-kb serve --host 0.0.0.0 --port 7700";
       Restart = "on-failure";
       RestartSec = 5;
+      # Sandbox (config audit). The service needs exactly one writable path -
+      # its knowledge directory - so everything else is locked down. Verified
+      # before shipping: the same option set was run as a replica on
+      # 127.0.0.1:7799 (served /health 200) and a write test into
+      # /root/evomem-kb under this exact sandbox succeeded, with the parent
+      # read-only as intended.
+
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      ProtectSystem = "strict";
+      ProtectHome = "read-only";
+      ProtectKernelTunables = true;
+      ProtectControlGroups = true;
+      ProtectClock = true;
+      RestrictSUIDSGID = true;
+      LockPersonality = true;
+      RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
+      ReadWritePaths = [ "/root/evomem-kb" ];
     };
   };
 
