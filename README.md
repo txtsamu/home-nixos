@@ -15,6 +15,7 @@ Execution is tracked as tickets T1–T20 there: [txtsamu/claude-research#9–#28
 - `secrets/secrets.nix` — agenix recipients manifest (which host key / age key can decrypt which `.age` file); see the comments there for the edit and rekey workflow
 - `secrets/*.age` — encrypted secrets, safe to commit
 - `hosts/home/{dns,proxy,tunnel,vpn,evomem,mcp,camofox,headroom,tiktok-bot,k3s,checkmk-agent}.nix` — one module per ticket
+- `provision/` — what the flake does **not** build (the `/opt` venvs, hand-copied binaries and browser dir the units point at), with `pip freeze` snapshots and recreation steps. Read it before assuming a rebuild reproduces this host
 
 ## Deploying a change
 
