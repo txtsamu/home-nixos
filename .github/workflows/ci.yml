@@ -22,10 +22,15 @@ jobs:
       # (a broken module fails here instead of at `nixos-rebuild switch`).
       - name: nix flake check
         run: nix flake check --show-trace
-      # Instantiates every derivation of the system without building it.
-      # A real build isn't possible here: the checkmk agent is fetched from
-      # monitor.lan, which only resolves on the home LAN.
-      - name: Instantiate system closure
+      # Full build of the system closure - catches build-time failures
+      # (broken fetches, hash mismatches, failing derivations) before a
+      # switch on the host. Possible since the checkmk agent (fetched from a
+      # LAN-only server) was removed on 2026-09-28.
+      - name: Free disk space
         run: |
-          nix build --dry-run .#nixosConfigurations.home.config.system.build.toplevel
-          echo "toplevel: $(nix eval --raw .#nixosConfigurations.home.config.system.build.toplevel.drvPath)" >> "$GITHUB_STEP_SUMMARY"
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - name: Build system closure
+        run: |
+          nix build -L .#nixosConfigurations.home.config.system.build.toplevel
+          echo "toplevel: $(readlink -f result)" >> "$GITHUB_STEP_SUMMARY"
