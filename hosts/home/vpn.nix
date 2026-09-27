@@ -47,6 +47,13 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      # `netbird up` waits forever when the management server is
+      # unreachable, and a oneshot has no start timeout by default - so
+      # every `nixos-rebuild switch` that restarts NetBird hung on this job.
+      # Hit 2026-09-28 when ssamu.id expired (vpn.ssamu.id NXDOMAIN): the
+      # switch sat ~1h and blocked the next one. Failing here is harmless;
+      # the netbird daemon keeps retrying the management server on its own.
+      TimeoutStartSec = "90s";
       # Real bug hit: `netbird up`'s own built-in --daemon-addr default
       # doesn't match `netbird.service`'s explicit unix:///var/run/netbird.sock
       # (differs by installed version - nixpkgs' netbird-client-0.71.4
