@@ -7,25 +7,37 @@ Execution is tracked as tickets T1–T20 there: [txtsamu/claude-research#9–#28
 
 ## Layout
 
-- `flake.nix` — inputs: nixpkgs (26.05), disko, agenix
-- `hosts/home/configuration.nix` — base config; imports every module below
+- `flake.nix` — inputs: nixpkgs (26.05), disko, agenix. Outputs: `nixosConfigurations.home`, a `checks.formatting` nixfmt check, and `formatter` (`nix fmt`)
+- `hosts/home/configuration.nix` — base config: static networking + `networking.extraHosts` LAN short names, users/SSH, swap, nix settings (flakes enabled, store auto-optimise, weekly GC); imports every module below
+- `hosts/home/keys/admin.pub` — authorized key(s) for `moo` and `root`
 - `hosts/home/disko.nix` — declarative disk layout
-- `hosts/home/secrets.nix` — agenix wiring (T2, done): declares `age.secrets.*` pointing at `../../secrets/*.age`
-- `secrets/secrets.nix` — agenix recipients manifest (which SSH host key(s) can decrypt which `.age` file); see comments there for the edit workflow
+- `hosts/home/secrets.nix` — agenix wiring: declares `age.secrets.*` pointing at `../../secrets/*.age`
+- `secrets/secrets.nix` — agenix recipients manifest (which host key / age key can decrypt which `.age` file); see the comments there for the edit and rekey workflow
 - `secrets/*.age` — encrypted secrets, safe to commit
 - `hosts/home/{dns,proxy,tunnel,vpn,evomem,mcp,camofox,headroom,tiktok-bot,k3s,checkmk-agent}.nix` — one module per service
-- `hosts/home/provision.nix` — oneshots that recreate the out-of-store app artifacts: source checkouts (`provision-src-*`, clone + `patches/` when missing) and uv venvs on Nix python (`provision-venv-*`, rebuilt from `venvs/*.txt` / the on-host freeze snapshot when missing or when nixpkgs moves python)
+- `hosts/home/provision.nix` — oneshots that recreate the out-of-store app artifacts: source checkouts (`provision-src-*`: clone + `patches/` when missing, no-op otherwise) and uv venvs on Nix python (`provision-venv-*`: rebuilt from the on-host freeze snapshot, else `venvs/*.txt`, when missing or when nixpkgs moves python). Not covered: app *state* (`/root/.hermes`, tiktok-bot cookies/db, `~moo/.headroom`, evomem's iSCSI LUN) - that's backup territory. `tiktok-bot` is a private repo, so on a reinstall it has to be cloned by hand
 - `.github/workflows/` — CI (`nix flake check` + system instantiation) and a weekly `flake.lock` update PR
 
-## Deploying
+## Deploying a change
 
-`home` deploys from a read-only clone of this repo at `~moo/home-nixos`. Edit elsewhere, push, then:
+Build from the repo, never from a local checkout on the host (a checkout on the
+host silently drifts from `main` and the next repo-based switch reverts it):
 
 ```
-cd ~/home-nixos && git pull && sudo nixos-rebuild switch --flake .#home
+nixos-rebuild switch --flake github:txtsamu/home-nixos#home --refresh
 ```
 
-`nixos-rebuild list-generations` shows the deployed commit under *Configuration Revision*. Format with `nix fmt` before committing (CI checks it).
+`nix flake check` evaluates the config and checks formatting (`nix fmt`) without
+touching the running system — CI (`.github/workflows/ci.yml`) runs it on every
+push and PR. `nixos-rebuild list-generations` shows each generation's commit
+under *Configuration Revision*.
+
+## Secrets
+
+Two agenix recipients: `home`'s own SSH host key (normal activation-time
+decryption) and an offline age recovery key. Losing the host key therefore does
+not lose the secrets, and `agenix -e` works from any machine holding the
+recovery key. See [`secrets/secrets.nix`](secrets/secrets.nix).
 
 ## Bootstrap
 

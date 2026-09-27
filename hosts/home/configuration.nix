@@ -3,9 +3,6 @@
 # under ./ and imports it below - dns.nix, proxy.nix, tunnel.nix, vpn.nix,
 # mcp.nix, tiktok-bot.nix, evomem.nix, k3s.nix, secrets.nix.
 { lib, pkgs, ... }:
-let
-  adminSshKey = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDd++c52S6U85veuAyNZ6j40u///FYsrLvZC0+N5VrIINOGNMUwQMOj7TORwuc+HP1f7PMkh7PqewE92OxSHtW6gyG++7TQg1QIfyqvoCpsqpDviSMF+NM35axDPeBVP/wzf5QzhSiguOKsj02rw66sfpS3nYnBll/SeKQwvpkfv9xGVYqJfmkvU5DLMpGh2Bg9hnwK+VTpjMignPvhrLRX4i+sUB3WtZWFUafmACLikzgnnUsX5L7ZcRvGJgaPMjTPy9yin/WIDFgSvLcSGqXkyh8mdVA/HrkzwhFhG161A/j+CrNbAdR1bSKJC3r2dW8V1u8b9eu31G8bIlqc2xVvlNpGRtsh94owYqCWYLE11srb0AesoVBo4T/9wAWl+MBRX9Y+rBetS09JzpgXeZGUJDwpyjlSWjLabKNcPyOpyU4Q1FoBAkbTarKrZ1p+a2xxrk4q7gEV1YpWtvv8N7jXCLpVBNtewRWfSA76a5ed+0jDyuSVkFZW4oOgrtmHBVs= administrator@WIN-EQ6G9ODFLE0";
-in
 {
   imports = [
     ./secrets.nix # T2  - done
@@ -79,6 +76,34 @@ in
     "1.1.1.1"
     "8.8.8.8"
   ];
+
+  # Deliberate trade-off on the public fallbacks: they are only reached when
+  # Technitium itself is down, and during that window DNS filtering is bypassed
+  # (no blocklists). Kept as-is because resolution surviving a resolver
+  # restart matters more here than blocking during that window.
+  #
+  # LAN short names: Technitium's zone is a *suffix* (`nas.lan` exists, bare
+  # `nas` is NXDOMAIN) and the MikroTik DHCP network hands out no `search`
+  # domain, so bare names can only come from here - nsswitch consults `files`
+  # before `dns`. Same list every other homelab host keeps in /etc/hosts:
+  # ranked by IP, one name per line, sections kept. Source of truth is a live
+  # peer (`ssh moo@192.168.50.20 cat /etc/hosts`) - re-pull and diff before
+  # editing, a name at an IP does get replaced.
+  networking.extraHosts = ''
+    ### Home Network Hosts ###
+    192.168.50.1    mikrotik
+    192.168.50.10   nas
+    192.168.50.20   fedora
+    192.168.50.30   px1
+    192.168.50.40   arm1
+    192.168.50.41   arm2
+    192.168.50.42   arm3
+    192.168.50.43   arm4
+    192.168.50.50   px2
+
+    ### VPS ###
+    103.134.154.180 vpz
+  '';
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
 
@@ -97,9 +122,12 @@ in
   users.users.moo = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keys = [ adminSshKey ];
+    # Key material lives in ./keys/admin.pub (not inlined) so the same file can
+    # be handed to a new user or rotated with a one-file diff. Both accounts
+    # currently share it - split it per user if a second operator is added.
+    openssh.authorizedKeys.keyFiles = [ ./keys/admin.pub ];
   };
-  users.users.root.openssh.authorizedKeys.keys = [ adminSshKey ];
+  users.users.root.openssh.authorizedKeys.keyFiles = [ ./keys/admin.pub ];
   security.sudo.wheelNeedsPassword = false;
 
   boot.loader.systemd-boot.enable = true;
