@@ -15,6 +15,16 @@
 # not hang the whole box at boot.
 { pkgs, ... }:
 let
+  evomem = pkgs.stdenvNoCC.mkDerivation rec {
+    pname = "evomem";
+    version = "0.4.2";
+    src = pkgs.fetchzip {
+      url = "https://github.com/anvie/evomem/releases/download/v${version}/evomem-${version}-x86_64-unknown-linux-musl.zip";
+      hash = "sha256-E9ZKFEyw2sTfbLbR0s3xk79LnrdMtpPXZqB8hkItpR8=";
+      stripRoot = false;
+    };
+    installPhase = "install -Dm755 evomem $out/bin/evomem";
+  };
   nasPortal = "192.168.50.10:3260";
   targetIqn = "iqn.2005-10.org.freenas.ctl:evomem-kb";
 in
@@ -30,7 +40,10 @@ in
 
   systemd.services.iscsi-login-evomem-kb = {
     description = "Discover + login to the evomem-kb TrueNAS iSCSI target";
-    after = [ "network-online.target" "iscsid.service" ];
+    after = [
+      "network-online.target"
+      "iscsid.service"
+    ];
     wants = [ "network-online.target" ];
     requires = [ "iscsid.service" ];
     serviceConfig = {
@@ -56,12 +69,12 @@ in
     ];
   };
 
-  # Binary is a stripped static build (no shared-lib deps), copied straight
-  # from warp-vm's already-running /usr/local/bin/evomem rather than
-  # rebuilt - it's the exact tested artifact already in production, zero
-  # build risk. Lives outside the Nix store like the other hand-run
-  # binaries this flake expects (mcp.nix, tiktok-bot.nix - still stubs as
-  # of T7, same pattern once they land).
+  # Upstream's static musl release binary (anvie/evomem v0.4.2), fetched
+  # into the store. Byte-identical (sha256 577377ca...) to the
+  # /usr/local/bin/evomem copied over from warp-vm in T7, so this is the
+  # same tested artifact, now reproducible from the flake. The old
+  # /usr/local/bin copy is left in place for anything that still calls it
+  # by path; `evomem` on PATH is this one.
   systemd.services.evomem = {
     description = "Evomem knowledge server (REST API on :7700)";
     after = [ "network.target" ];
@@ -70,11 +83,13 @@ in
     environment.EVOMEM_ROOT = "/root/evomem-kb";
     serviceConfig = {
       Type = "simple";
-      ExecStart = "/usr/local/bin/evomem --knowledge /root/evomem-kb serve --host 0.0.0.0 --port 7700";
+      ExecStart = "${evomem}/bin/evomem --knowledge /root/evomem-kb serve --host 0.0.0.0 --port 7700";
       Restart = "on-failure";
       RestartSec = 5;
     };
   };
+
+  environment.systemPackages = [ evomem ];
 
   networking.firewall.allowedTCPPorts = [ 7700 ];
 }

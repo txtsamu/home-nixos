@@ -58,7 +58,10 @@
     ];
   };
 
-  environment.systemPackages = with pkgs; [ kubectl kubernetes-helm ];
+  environment.systemPackages = with pkgs; [
+    kubectl
+    kubernetes-helm
+  ];
 
   # 10250 = kubelet's own API (metrics/cadvisor/exec/logs). Never opened
   # before because nothing needed to reach it from outside the node -
@@ -68,7 +71,10 @@
   # the 48h resource-right-sizing exercise referenced in the migration
   # plan doc) tried to reach `role: node` targets at the node's real LAN
   # IP and hit a firewall timeout, not a connection refused.
-  networking.firewall.allowedTCPPorts = [ 6443 10250 ];
+  networking.firewall.allowedTCPPorts = [
+    6443
+    10250
+  ];
 
   # NFS client support - needed for the plain-NFS PVs some apps use
   # alongside democratic-csi's iSCSI-backed ones (photos-nfs, immich-nfs,

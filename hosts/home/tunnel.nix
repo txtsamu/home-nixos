@@ -13,10 +13,9 @@
 # tunnel is required, not just a fresh token) via the Cloudflare API, which
 # hands back the same {AccountTag, TunnelSecret, TunnelID} JSON structure
 # the module's credentialsFile expects directly - no format conversion
-# needed. Local `ingress` config below is a deliberate throwaway route
-# (home-t5-test.ssamu.id -> home's own Technitium web UI) proving the
-# tunnel works end-to-end without touching any of warp-vm's real public
-# hostname routes.
+# needed. The throwaway T5 test route (home-t5-test.<PERSONAL_DOMAIN> -> Technitium
+# UI) was removed 2026-09-27; with no local ingress rules the tunnel
+# answers everything with the default below.
 { config, ... }:
 {
   services.cloudflared = {
@@ -24,9 +23,6 @@
     tunnels."83033670-b996-49b7-8174-1032db860685" = {
       credentialsFile = config.age.secrets.cloudflare-tunnel-credentials.path;
       default = "http_status:404";
-      ingress = {
-        "home-t5-test.ssamu.id" = "http://localhost:5380";
-      };
     };
   };
 }

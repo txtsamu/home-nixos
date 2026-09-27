@@ -28,7 +28,10 @@ in
 {
   # python3.13 + nodejs_22 referenced by the system so the venv base
   # interpreter and gateway node usage stay available (GC roots).
-  environment.systemPackages = [ pkgs.python313 pkgs.nodejs_22 ];
+  environment.systemPackages = [
+    pkgs.python313
+    pkgs.nodejs_22
+  ];
 
   # `hermes update` shells out to its own vendored, dynamically-linked
   # generic-Linux `uv` binary (/root/.hermes/bin/uv) for the dependency-
@@ -79,7 +82,10 @@ in
 
   systemd.services.hermes-mcp = {
     description = "Hermes MCP Bridge (pre-warmed stdio daemon)";
-    after = [ "network.target" "hermes-gateway.service" ];
+    after = [
+      "network.target"
+      "hermes-gateway.service"
+    ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "simple";
@@ -87,7 +93,10 @@ in
       Restart = "always";
       RestartSec = "3";
       User = "root";
-      Environment = [ "HOME=/root" "PATH=${basePath}" ];
+      Environment = [
+        "HOME=/root"
+        "PATH=${basePath}"
+      ];
       StandardOutput = "journal";
       StandardError = "journal";
     };

@@ -27,47 +27,13 @@
 # original port (plan doc: "18 minus syncyomi.lan = 17 in scope"). It
 # stays warp-vm-only and will stop resolving once warp-vm is decommissioned
 # (T20) - a known, previously-decided gap, not an oversight.
+# 2026-09-27: dropped jellyfin/grafana/bastion.lan (warp-vm-era upstreams,
+# 502 for weeks) and rancher.lan (Rancher decommissioned 2026-09-17).
 { ... }:
 {
   services.caddy = {
     enable = true;
     globalConfig = "local_certs";
-
-    # Not migrated - still warp-vm's original k3s cluster IPs, unaffected
-    # by T14-T18. jellyfin/grafana/bastion/rancher were already flagged as
-    # pre-existing-down elsewhere in this migration's work, unrelated to
-    # this ticket.
-    virtualHosts."jellyfin.lan".extraConfig = ''
-      tls internal
-      reverse_proxy 192.168.50.227:8096
-    '';
-
-    virtualHosts."grafana.lan".extraConfig = ''
-      tls internal
-      reverse_proxy 192.168.50.224:3000
-    '';
-
-    virtualHosts."bastion.lan".extraConfig = ''
-      tls internal
-      reverse_proxy 192.168.50.232:80
-    '';
-
-    # Real bug found post-cutover (2026-09-10): this pointed at warp-vm's
-    # own Rancher (LoadBalancer IP .220), which went away when warp-vm was
-    # shut down in T19. home has its own Rancher (bootstrapped as part of
-    # the platform layer in T13) but it was only ever given a ClusterIP,
-    # never exposed via a MetalLB LoadBalancer IP - repointed directly at
-    # that ClusterIP instead, confirmed reachable from the host network
-    # (kube-proxy's rules apply node-wide, not just inside pod netns).
-    virtualHosts."rancher.lan".extraConfig = ''
-      tls internal
-      reverse_proxy https://10.43.126.48 {
-        header_up Host {host}
-        transport http {
-          tls_insecure_skip_verify
-        }
-      }
-    '';
 
     # Migrated apps (T14-T18) - upstreams corrected to home's actual
     # MetalLB LoadBalancer IPs, matching warp-vm's live Caddyfile exactly.
@@ -150,8 +116,8 @@
 
     # Perses dashboard (metrics visualization on top of the VictoriaMetrics
     # instance from home-k8s-resource-rightsizing-victoriametrics.md).
-    # Same ClusterIP-direct pattern as rancher.lan above - plain HTTP
-    # backend, no TLS transport block needed.
+    # Direct to the service's ClusterIP (kube-proxy rules apply node-wide,
+    # so the host network can reach it) - plain HTTP backend.
     virtualHosts."perses.lan".extraConfig = ''
       tls internal
       reverse_proxy 10.43.155.107:8080
@@ -166,5 +132,8 @@
     '';
   };
 
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
 }

@@ -9,15 +9,43 @@
     agenix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, disko, agenix, ... }: {
-    nixosConfigurations.home = nixpkgs.lib.nixosSystem {
+  outputs =
+    {
+      self,
+      nixpkgs,
+      disko,
+      agenix,
+      ...
+    }:
+    let
       system = "x86_64-linux";
-      modules = [
-        disko.nixosModules.disko
-        agenix.nixosModules.default
-        ./hosts/home/configuration.nix
-        ./hosts/home/disko.nix
-      ];
+      pkgs = nixpkgs.legacyPackages.${system};
+    in
+    {
+      nixosConfigurations.home = nixpkgs.lib.nixosSystem {
+        inherit system;
+        modules = [
+          disko.nixosModules.disko
+          agenix.nixosModules.default
+          # Shows up as "Configuration Revision" in `nixos-rebuild
+          # list-generations` - ties each generation to a commit.
+          { system.configurationRevision = self.rev or self.dirtyRev or null; }
+          ./hosts/home/configuration.nix
+          ./hosts/home/disko.nix
+        ];
+      };
+
+      formatter.${system} = pkgs.nixfmt-tree;
+
+      # `nix flake check` - format check only. The full system is checked in
+      # CI by evaluating its drvPath (a real build needs monitor.lan for the
+      # checkmk agent fetch, unreachable from GitHub runners).
+      checks.${system}.formatting =
+        pkgs.runCommand "check-formatting" { nativeBuildInputs = [ pkgs.nixfmt ]; }
+          ''
+            cd ${self}
+            find . -name '*.nix' -print0 | xargs -0 nixfmt --check
+            touch $out
+          '';
     };
-  };
 }

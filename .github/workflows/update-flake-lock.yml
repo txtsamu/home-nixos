@@ -1,0 +1,26 @@
+name: Update flake.lock
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # weekly, Monday 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      # Opens (or updates) a PR bumping all inputs. PRs created with the
+      # default GITHUB_TOKEN don't trigger other workflows, so re-run CI on
+      # the PR with its "Run workflow" button (or push an empty commit)
+      # before merging. Deploy after merge on home:
+      #   cd ~/home-nixos && git pull && sudo nixos-rebuild switch --flake .#home
+      - uses: DeterminateSystems/update-flake-lock@v29
+        with:
+          pr-title: "flake.lock: update inputs"
+          pr-labels: dependencies

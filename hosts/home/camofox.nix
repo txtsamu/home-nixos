@@ -28,11 +28,16 @@
   # nixpkgs.config.allowUnfree = true, matching this migration's pattern
   # of minimal, deliberate changes.
   nixpkgs.config.allowUnfreePredicate =
-    pkg: builtins.elem (pkgs.lib.getName pkg) [ "steam-unwrapped" "steam-run" ];
+    pkg:
+    builtins.elem (pkgs.lib.getName pkg) [
+      "steam-unwrapped"
+      "steam-run"
+    ];
 
   systemd.services.camofox-browser = {
     description = "Camofox Browser Server (anti-detection headless browser for AI agents)";
     after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     environment = {
       NODE_ENV = "production";

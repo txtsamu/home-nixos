@@ -33,17 +33,26 @@
 #   path; this venv is python3.13. Applied the one-line fix directly
 #   (gen_real_msToken -> gen_false_msToken in the except block) instead
 #   of fighting the script's version assumption.
-{ ... }:
+{ config, ... }:
 {
   fileSystems."/mnt/photos" = {
     device = "192.168.50.10:/mnt/data/photos";
     fsType = "nfs4";
-    options = [ "_netdev" "nofail" "x-systemd.automount" "x-systemd.idle-timeout=0" ];
+    options = [
+      "_netdev"
+      "nofail"
+      "x-systemd.automount"
+      "x-systemd.idle-timeout=0"
+    ];
   };
 
   systemd.services.tiktok-bot = {
     description = "TikTok Bulk Downloader Telegram Bot";
-    after = [ "network-online.target" "camofox-browser.service" "mnt-photos.automount" ];
+    after = [
+      "network-online.target"
+      "camofox-browser.service"
+      "mnt-photos.automount"
+    ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     unitConfig.RequiresMountsFor = "/mnt/photos";
@@ -56,7 +65,7 @@
     serviceConfig = {
       Type = "simple";
       WorkingDirectory = "/opt/tiktok-bot";
-      EnvironmentFile = "/run/agenix/camofox-api-key";
+      EnvironmentFile = config.age.secrets.camofox-api-key.path;
       ExecStart = "/opt/tiktok-bot-venv/bin/python3 /opt/tiktok-bot/tiktok_bot.py";
       Restart = "always";
       RestartSec = 10;

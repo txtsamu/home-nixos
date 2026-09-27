@@ -20,7 +20,10 @@
 {
   systemd.services.netbird = {
     description = "NetBird mesh network client";
-    after = [ "network.target" "syslog.target" ];
+    after = [
+      "network.target"
+      "syslog.target"
+    ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       ExecStart = "${pkgs.netbird}/bin/netbird service run --log-level info --daemon-addr unix:///var/run/netbird.sock --log-file /var/log/netbird/client.log";
