@@ -127,7 +127,13 @@ let
     description = "Provision ${name} Python venv at ${v.path}";
     after = [ "network-online.target" ] ++ (v.after or [ ]);
     wants = [ "network-online.target" ] ++ (v.after or [ ]);
-    path = [ pkgs.coreutils ];
+    # git: lockfiles can pin VCS deps (tiktok-bot's `instagrapi @ git+https://...`);
+    # uv shells out to git to fetch them. Missing here broke the first real
+    # rebuild on 2026-09-28 (rolled back cleanly).
+    path = [
+      pkgs.coreutils
+      pkgs.git
+    ];
     environment = {
       UV_CACHE_DIR = "/var/cache/provision-venvs";
       UV_PYTHON_DOWNLOADS = "never";
