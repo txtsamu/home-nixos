@@ -1,0 +1,3 @@
+# `nix build` output links (a local build artifact, never content)
+result
+result-*
