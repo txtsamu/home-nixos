@@ -37,9 +37,8 @@
 
       formatter.${system} = pkgs.nixfmt-tree;
 
-      # `nix flake check` - format check only. The full system is checked in
-      # CI by evaluating its drvPath (a real build needs monitor.lan for the
-      # checkmk agent fetch, unreachable from GitHub runners).
+      # `nix flake check` - format check (and full eval). CI additionally
+      # builds the whole system closure.
       checks.${system}.formatting =
         pkgs.runCommand "check-formatting" { nativeBuildInputs = [ pkgs.nixfmt ]; }
           ''

@@ -16,7 +16,6 @@
     ./headroom.nix # T11 - done
     ./tiktok-bot.nix # T10 - done
     ./k3s.nix # T13 - done
-    ./checkmk-agent.nix # T12 - done
     ./provision.nix # out-of-store app artifacts (venvs, source checkouts)
   ];
 

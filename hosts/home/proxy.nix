@@ -35,6 +35,7 @@
 #
 # 2026-09-27: dropped jellyfin/grafana/bastion.lan (warp-vm-era upstreams,
 # 502 for weeks) and rancher.lan (Rancher decommissioned 2026-09-17).
+# 2026-09-28: dropped monitor.lan - the Checkmk server is gone from k3s.
 { lib, ... }:
 let
   # Plain-HTTP backends: Caddy terminates TLS with its internal CA
@@ -98,16 +99,7 @@ in
             }
           }
         '';
-      }) tlsUpstreams
-      // {
-        # Checkmk's UI is served under /cmk/ - same permanent redirect
-        # warp-vm had (it is the one site whose body genuinely differs).
-        "monitor.lan".extraConfig = ''
-          tls internal
-          redir / /cmk/ permanent
-          reverse_proxy 192.168.50.240:5000
-        '';
-      };
+      }) tlsUpstreams;
   };
 
   networking.firewall.allowedTCPPorts = [
