@@ -156,6 +156,14 @@
       tls internal
       reverse_proxy 10.43.155.107:8080
     '';
+
+    # ComfyUI (Qwen-Image 2.1 GGUF) runs on the fedora desktop (192.168.50.20),
+    # not in k3s - it needs the RX 7800 XT, and `home` has no GPU. Plain HTTP
+    # backend; Caddy proxies its websocket (/ws) transparently.
+    virtualHosts."comfy.lan".extraConfig = ''
+      tls internal
+      reverse_proxy 192.168.50.20:8188
+    '';
   };
 
   networking.firewall.allowedTCPPorts = [ 80 443 ];
