@@ -1,0 +1,24 @@
+diff --git a/tiktok_bot.py b/tiktok_bot.py
+index 6ea3933..3a62724 100644
+--- a/tiktok_bot.py
++++ b/tiktok_bot.py
+@@ -197,7 +197,7 @@ NAS_UID = 1000
+ NAS_GID = 3000
+ 
+ # Gallery-dl upgrade tool
+-HERMES_PIP_BIN = "/opt/hermes-venv/bin/pip"
++HERMES_PIP_BIN = "/opt/tiktok-bot-venv/bin/pip"
+ 
+ # Per-platform cookie storage: /opt/tiktok-bot/cookies/{platform}_cookies.txt
+ PLATFORM_COOKIES_DIR = Path("/opt/tiktok-bot/cookies")
+@@ -468,8 +468,8 @@ def get_default_ydl_headers() -> dict:
+     }
+ 
+ 
+-GALLERY_DL_BIN = "/opt/hermes-venv/bin/gallery-dl"
+-YTDLP_BIN = "/opt/hermes-venv/bin/yt-dlp"
++GALLERY_DL_BIN = "/opt/tiktok-bot-venv/bin/gallery-dl"
++YTDLP_BIN = "/opt/tiktok-bot-venv/bin/yt-dlp"
+ 
+ 
+ def ensure_gallerydl_latest() -> str:

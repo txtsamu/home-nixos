@@ -8,18 +8,19 @@ let
 in
 {
   imports = [
-    ./secrets.nix    # T2  - done
-    ./dns.nix        # T3  - done
-    ./proxy.nix      # T4  - done
-    ./tunnel.nix     # T5  - done
-    ./vpn.nix        # T6  - done
-    ./evomem.nix     # T7  - done
-    ./mcp.nix        # T8  - done
-    ./camofox.nix    # T9  - done
-    ./headroom.nix   # T11 - done
+    ./secrets.nix # T2  - done
+    ./dns.nix # T3  - done
+    ./proxy.nix # T4  - done
+    ./tunnel.nix # T5  - done
+    ./vpn.nix # T6  - done
+    ./evomem.nix # T7  - done
+    ./mcp.nix # T8  - done
+    ./camofox.nix # T9  - done
+    ./headroom.nix # T11 - done
     ./tiktok-bot.nix # T10 - done
-    ./k3s.nix        # T13 - done
+    ./k3s.nix # T13 - done
     ./checkmk-agent.nix # T12 - done
+    ./provision.nix # out-of-store app artifacts (venvs, source checkouts)
   ];
 
   # Fix for initrd hang on boot: this VM uses a virtio-scsi-pci controller
@@ -73,7 +74,11 @@ in
   # #9) was real and is still worth remembering once `home`'s own
   # Technitium (T3) is what everyone actually queries - just filed under
   # the wrong IP until this fix.
-  networking.nameservers = [ "192.168.50.200" "1.1.1.1" "8.8.8.8" ];
+  networking.nameservers = [
+    "192.168.50.200"
+    "1.1.1.1"
+    "8.8.8.8"
+  ];
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
 
@@ -99,6 +104,32 @@ in
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  # Bounds /boot and the number of system generations GC has to keep.
+  boot.loader.systemd-boot.configurationLimit = 10;
+
+  nix.settings = {
+    # Flakes are how this host is built; without this every `nix` call
+    # needed --extra-experimental-features.
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+    auto-optimise-store = true;
+    trusted-users = [
+      "root"
+      "@wheel"
+    ];
+  };
+
+  # / was at 81% (k3s alone ~33G) with no GC timer at all. Venvs under /opt
+  # are safe from this: provision.nix keeps their base python rooted and
+  # rebuilds them if nixpkgs moves it.
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 14d";
+    persistent = true;
+  };
 
   # 8G swapfile on the root disk (38G free at the time this was added,
   # 16GiB physical RAM, real overcommit already observed - Checkmk flags
@@ -124,7 +155,14 @@ in
     }
   ];
 
-  environment.systemPackages = with pkgs; [ git vim curl fastfetch htop btop ];
+  environment.systemPackages = with pkgs; [
+    git
+    vim
+    curl
+    fastfetch
+    htop
+    btop
+  ];
 
   system.stateVersion = "26.05";
 }

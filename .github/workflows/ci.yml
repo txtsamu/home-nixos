@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      # Formatting check + full evaluation of nixosConfigurations.home
+      # (a broken module fails here instead of at `nixos-rebuild switch`).
+      - name: nix flake check
+        run: nix flake check --show-trace
+      # Instantiates every derivation of the system without building it.
+      # A real build isn't possible here: the checkmk agent is fetched from
+      # monitor.lan, which only resolves on the home LAN.
+      - name: Instantiate system closure
+        run: |
+          nix build --dry-run .#nixosConfigurations.home.config.system.build.toplevel
+          echo "toplevel: $(nix eval --raw .#nixosConfigurations.home.config.system.build.toplevel.drvPath)" >> "$GITHUB_STEP_SUMMARY"

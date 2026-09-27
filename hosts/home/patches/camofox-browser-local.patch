@@ -1,0 +1,27 @@
+diff --git a/lib/config.js b/lib/config.js
+index 7fd9438..326690a 100644
+--- a/lib/config.js
++++ b/lib/config.js
+@@ -118,6 +118,8 @@ function loadConfig({ configPath = CONFIG_PATH } = {}) {
+     camoufoxCacheDir: camoufoxCacheDir(),
+     prometheusEnabled: process.env.PROMETHEUS_ENABLED === '1' || process.env.PROMETHEUS_ENABLED === 'true',
+     disableDefaultAddons: process.env.CAMOFOX_DISABLE_DEFAULT_ADDONS === '1' || process.env.CAMOFOX_DISABLE_DEFAULT_ADDONS === 'true',
++    // Extra .xpi addons to install at browser launch (comma-separated absolute paths)
++    extraAddons: (process.env.CAMOFOX_ADDONS || '').split(',').map(s => s.trim()).filter(Boolean),
+     proxy: {
+       strategy: inferProxyStrategy(process.env.PROXY_STRATEGY || ''),
+       providerName: process.env.PROXY_PROVIDER || 'decodo',
+diff --git a/server.js b/server.js
+index 06443a7..72ee38e 100644
+--- a/server.js
++++ b/server.js
+@@ -1064,6 +1064,9 @@ async function launchBrowserInstance() {
+         geoip: !!launchProxy,
+         virtual_display: vdDisplay,
+         exclude_addons: CONFIG.disableDefaultAddons ? ['UBO'] : undefined,
++        addons: CONFIG.extraAddons,
++        config: { debug: true },
++        i_know_what_im_doing: true,
+       });
+       options.proxy = normalizePlaywrightProxy(options.proxy);
+       // Playwright's launcher defaults handleSIGTERM/SIGINT/SIGHUP to true,
