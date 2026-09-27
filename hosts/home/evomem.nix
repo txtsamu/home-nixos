@@ -102,7 +102,11 @@ in
       ProtectClock = true;
       RestrictSUIDSGID = true;
       LockPersonality = true;
-      RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
+      RestrictAddressFamilies = [
+        "AF_INET"
+        "AF_INET6"
+        "AF_UNIX"
+      ];
       ReadWritePaths = [ "/root/evomem-kb" ];
     };
   };
