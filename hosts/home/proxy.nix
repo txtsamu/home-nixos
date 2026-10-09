@@ -75,6 +75,10 @@ let
     "nas.lan" = "https://192.168.50.10";
     "px1.lan" = "https://192.168.50.30:8006";
     "px2.lan" = "https://192.168.50.50:8006";
+
+    # kubewall (k3s, kubewall-system) - ClusterIP service, serves TLS itself
+    # on 8443 (plain HTTP gets a 400).
+    "kwall.lan" = "https://10.43.240.25:8443";
   };
 in
 {
