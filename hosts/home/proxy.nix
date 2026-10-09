@@ -66,6 +66,10 @@ let
     # Technitium's own web UI on this host - 127.0.0.1 keeps its local
     # meaning regardless of which host runs Caddy.
     "dns.lan" = "127.0.0.1:5380";
+
+    # route-manager (k3s, homelab): the web app that adds/removes the extra
+    # routes imported below. ClusterIP is pinned in its manifest.
+    "route.lan" = "10.43.200.80:80";
   };
 
   # Backends that speak TLS themselves and need Host passthrough with the
@@ -86,6 +90,13 @@ in
     enable = true;
     globalConfig = "local_certs";
 
+    # Sites owned by route-manager (written to this dir by the app). The glob
+    # keeps a missing file from being an error. A name that duplicates a site
+    # above makes `caddy reload` fail, so the app reserves those names.
+    extraConfig = ''
+      import /var/lib/route-manager/*.caddy
+    '';
+
     virtualHosts =
       lib.mapAttrs (name: upstream: {
         extraConfig = ''
@@ -104,6 +115,20 @@ in
           }
         '';
       }) tlsUpstreams;
+  };
+
+  systemd.tmpfiles.rules = [ "d /var/lib/route-manager 0755 root root -" ];
+
+  # Reload Caddy when route-manager rewrites its snippet. The app writes the
+  # file in place (not by rename), so PathChanged's close-after-write event
+  # fires. A bad snippet fails the reload and Caddy keeps the old config.
+  systemd.paths.caddy-routes-reload = {
+    wantedBy = [ "multi-user.target" ];
+    pathConfig.PathChanged = "/var/lib/route-manager/routes.caddy";
+  };
+  systemd.services.caddy-routes-reload = {
+    serviceConfig.Type = "oneshot";
+    script = "systemctl reload caddy.service";
   };
 
   networking.firewall.allowedTCPPorts = [
