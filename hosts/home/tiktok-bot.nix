@@ -51,9 +51,14 @@
     after = [
       "network-online.target"
       "camofox-browser.service"
+      "anoa-browser.service"
       "mnt-photos.automount"
     ];
-    wants = [ "network-online.target" ];
+    # wants, not requires: if anoa is down the bot falls back to camofox.
+    wants = [
+      "network-online.target"
+      "anoa-browser.service"
+    ];
     wantedBy = [ "multi-user.target" ];
     unitConfig.RequiresMountsFor = "/mnt/photos";
     environment = {
@@ -61,11 +66,18 @@
       # camofox-browser (T9) runs on this same host now - CAMOFOX_URL's
       # own default (http://localhost:9377) already resolves correctly,
       # no override needed.
+      # Profile discovery tries anoa (anoa.nix, ANOA_URL default
+      # http://127.0.0.1:9500) first and falls back to camofox when it
+      # finds nothing.
+      SCRAPE_BROWSER = "anoa";
     };
     serviceConfig = {
       Type = "simple";
       WorkingDirectory = "/opt/tiktok-bot";
-      EnvironmentFile = config.age.secrets.camofox-api-key.path;
+      EnvironmentFile = [
+        config.age.secrets.camofox-api-key.path
+        config.age.secrets.anoa-auth-token.path
+      ];
       ExecStart = "/opt/tiktok-bot-venv/bin/python3 /opt/tiktok-bot/tiktok_bot.py";
       Restart = "always";
       RestartSec = 10;
