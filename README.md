@@ -7,14 +7,14 @@ Execution is tracked as tickets T1–T20 there: [txtsamu/claude-research#9–#28
 
 ## Layout
 
-- `flake.nix` — inputs: nixpkgs (26.05), disko, agenix. Outputs: `nixosConfigurations.home`, a `checks.formatting` nixfmt check, and `formatter` (`nix fmt`)
+- `flake.nix` — inputs: nixpkgs (26.05), disko, agenix, anoa (tiktok-bot's scrape browser, pinned release tag). Outputs: `nixosConfigurations.home`, a `checks.formatting` nixfmt check, and `formatter` (`nix fmt`)
 - `hosts/home/configuration.nix` — base config: static networking + `networking.extraHosts` LAN short names, users/SSH, swap, nix settings (flakes enabled, store auto-optimise, weekly GC); imports every module below
 - `hosts/home/keys/admin.pub` — authorized key(s) for `moo` and `root`
 - `hosts/home/disko.nix` — declarative disk layout
 - `hosts/home/secrets.nix` — agenix wiring: declares `age.secrets.*` pointing at `../../secrets/*.age`
 - `secrets/secrets.nix` — agenix recipients manifest (which host key / age key can decrypt which `.age` file); see the comments there for the edit and rekey workflow
 - `secrets/*.age` — encrypted secrets, safe to commit
-- `hosts/home/{dns,proxy,tunnel,vpn,evomem,mcp,camofox,headroom,tiktok-bot,k3s}.nix` — one module per service
+- `hosts/home/{dns,proxy,tunnel,vpn,evomem,mcp,camofox,anoa,headroom,tiktok-bot,k3s}.nix` — one module per service
 - `hosts/home/provision.nix` — oneshots that recreate the out-of-store app artifacts: source checkouts (`provision-src-*`: clone + `patches/` when missing, no-op otherwise) and uv venvs on Nix python (`provision-venv-*`: rebuilt from the on-host freeze snapshot, else `venvs/*.txt`, when missing or when nixpkgs moves python). Not covered: app *state* (`/root/.hermes`, tiktok-bot cookies/db, `~moo/.headroom`, evomem's iSCSI LUN) - that's backup territory. `tiktok-bot` is a private repo, so on a reinstall it has to be cloned by hand
 - `.github/workflows/` — CI (`nix flake check` + system instantiation) and a weekly `flake.lock` update PR
 

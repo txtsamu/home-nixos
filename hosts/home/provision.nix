@@ -63,7 +63,7 @@ let
       # hand (or restore from backup), then `systemctl restart
       # provision-src-tiktok-bot` applies nothing further since the dir exists.
       url = "https://github.com/txtsamu/tiktok-bot.git";
-      rev = "a3e7f1eb03adb1e60f6b428c0d9767760351d68b";
+      rev = "27f8098954277e379416dc8c1ae9bc5d9965ed82";
       patch = ./patches/tiktok-bot-local.patch;
     };
   };

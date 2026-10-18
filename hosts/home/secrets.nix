@@ -49,4 +49,11 @@
   age.secrets.camofox-api-key = {
     file = ../../secrets/camofox-api-key.age;
   };
+
+  # ANOA_TOKEN=<hex> (EnvironmentFile format). Read by anoa.nix, which turns
+  # it into anoa's authToken config, and by tiktok-bot.nix, which sends it as
+  # the Bearer token on /mcp and the CDP websocket.
+  age.secrets.anoa-auth-token = {
+    file = ../../secrets/anoa-auth-token.age;
+  };
 }
