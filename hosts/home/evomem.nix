@@ -18,9 +18,15 @@ let
   evomem = pkgs.stdenvNoCC.mkDerivation rec {
     pname = "evomem";
     version = "0.4.2";
+    # txtsamu/evomem fork, branch perf/cache-lexical-vocabulary: upstream 0.4.2
+    # plus a cached lexical vocabulary. Upstream rescans all of word_index on
+    # every search (~5 s at 43k chunks, serialized behind one mutex, so a few
+    # concurrent callers blew past the MCP bridge's timeout); this is ~0.13 s
+    # with byte-identical results. Drop back to anvie/evomem once upstream
+    # has the fix.
     src = pkgs.fetchzip {
-      url = "https://github.com/anvie/evomem/releases/download/v${version}/evomem-${version}-x86_64-unknown-linux-musl.zip";
-      hash = "sha256-E9ZKFEyw2sTfbLbR0s3xk79LnrdMtpPXZqB8hkItpR8=";
+      url = "https://github.com/txtsamu/evomem/releases/download/v${version}-perf1/evomem-${version}-perf1-x86_64-unknown-linux-musl.zip";
+      hash = "sha256-x3IQq+k2L3yujtvXHxwssMcqKfzVRy8j2pTXiY4PxP0=";
       stripRoot = false;
     };
     installPhase = "install -Dm755 evomem $out/bin/evomem";
@@ -69,12 +75,11 @@ in
     ];
   };
 
-  # Upstream's static musl release binary (anvie/evomem v0.4.2), fetched
-  # into the store. Byte-identical (sha256 577377ca...) to the
-  # /usr/local/bin/evomem copied over from warp-vm in T7, so this is the
-  # same tested artifact, now reproducible from the flake. The old
-  # /usr/local/bin copy is left in place for anything that still calls it
-  # by path; `evomem` on PATH is this one.
+  # Static musl release binary of the fork above, fetched into the store.
+  # (Originally upstream's anvie/evomem v0.4.2, byte-identical sha256
+  # 577377ca... to the /usr/local/bin/evomem copied over from warp-vm in
+  # T7.) The old /usr/local/bin copy is left in place for anything that
+  # still calls it by path; `evomem` on PATH is this one.
   systemd.services.evomem = {
     description = "Evomem knowledge server (REST API on :7700)";
     after = [ "network.target" ];
