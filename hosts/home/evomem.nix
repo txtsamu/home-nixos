@@ -26,7 +26,7 @@ let
     # has the fix.
     src = pkgs.fetchzip {
       url = "https://github.com/txtsamu/evomem/releases/download/v${version}-perf1/evomem-${version}-perf1-x86_64-unknown-linux-musl.zip";
-      hash = "sha256-x3IQq+k2L3yujtvXHxwssMcqKfzVRy8j2pTXiY4PxP0=";
+      hash = "sha256-O8sfblTaz5OaGBr8whf9b2UppIfjwdh+rTAVVStMfok=";
       stripRoot = false;
     };
     installPhase = "install -Dm755 evomem $out/bin/evomem";
