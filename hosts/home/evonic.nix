@@ -30,7 +30,7 @@
 # default 0) - not an env var - and home has no Docker/Podman, so it stays off
 # and tools run as the unprivileged `evonic` user inside the systemd sandbox
 # below.
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 let
   src = "/opt/evonic-source";
   venv = "/opt/evonic-venv";
@@ -84,6 +84,14 @@ in
       CONNECTOR_WS_HOST = "127.0.0.1";
       DEBUG = "0";
       PYTHONUNBUFFERED = "1";
+      # The venv holds manylinux wheels (numpy, opencv, onnxruntime) that dlopen
+      # libstdc++ and libz, which NixOS does not put on the default library
+      # path. Without this `import numpy` fails inside the service, and with it
+      # Evonic's PromptPurify L5e prompt-injection classifier never loads.
+      LD_LIBRARY_PATH = lib.makeLibraryPath [
+        pkgs.stdenv.cc.cc.lib
+        pkgs.zlib
+      ];
       # Cookies default to Secure; this is plain http on loopback.
       FORCE_INSECURE_COOKIES = "1";
       # Memory engine: the evomem binary home already installs (evomem.nix).
