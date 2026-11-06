@@ -92,6 +92,10 @@ in
       # store path, so it is off.
       EVOMEM_BINARY = "/run/current-system/sw/bin/evomem";
       EVONIC_SKIP_EVOMEM_UPDATE_CHECK = "1";
+      # Seconds Evonic waits for one evomem CLI call (default 5). A sync of a
+      # knowledge base with a few hundred notes takes longer, and a timed-out
+      # sync silently leaves the index stale.
+      EVOMEM_TIMEOUT = "120";
     };
     serviceConfig = {
       Type = "simple";
