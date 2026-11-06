@@ -13,7 +13,7 @@
 # that's how warp-vm's cluster itself was built (plan's §1.2/§3.2). See the
 # ticket's resolution comment for the exact commands run and the values
 # used (matched against warp-vm's `helm get values` output).
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
   services.k3s = {
     enable = true;
@@ -105,4 +105,75 @@
   # fails without it (real bug hit standing this up: FailedMount, "/var/iscsi
   # is not a directory").
   systemd.tmpfiles.rules = [ "d /var/iscsi 0755 root root -" ];
+
+  # Clean shutdown for the iSCSI-backed pod volumes.
+  #
+  # Real bug, 2026-11-07: `systemctl reboot` hung and needed a hard reset from
+  # Proxmox. k3s.service has KillMode=process, so stopping it leaves the
+  # containerd-shim pods running, and kubelet's CSI volumes (democratic-csi
+  # iSCSI LUNs mounted under /var/lib/kubelet) stay mounted - systemd has no
+  # unit for them, so nothing orders their unmount against the network. The
+  # network went down (eth0 address deleted) with those filesystems still
+  # mounted, iscsid lost the NAS, the sync in systemd-shutdown timed out, the
+  # NAS dropped the sessions after its 30 s NOP timeout, and ext4 aborted the
+  # journals on a dozen volumes (postgres/mariadb crash recovery on next boot).
+  #
+  # This unit starts before k3s and stops after it, and after iscsid and
+  # network-online (stop order is the reverse of start order), so its ExecStop
+  # runs once k3s is down but while the network and iscsid still work. It
+  # waits for the pods to exit on their own (systemd is already stopping their
+  # cri-containerd scopes), then runs k3s's own killall script for any leftover
+  # shims and to unmount /var/lib/kubelet/{pods,plugins}, and finally logs the
+  # democratic-csi iSCSI sessions out. The evomem-kb LUN is not touched: it is
+  # a normal fstab mount that systemd already unmounts first.
+  #
+  # restartIfChanged/stopIfChanged = false: a `switch` must never run ExecStop
+  # on a live node - that would kill every pod.
+  systemd.services.k3s-shutdown-cleanup = {
+    description = "Stop k3s pods and detach CSI iSCSI volumes before the network goes down";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "network-online.target" ];
+    after = [
+      "network-online.target"
+      "iscsid.service"
+    ];
+    before = [ "k3s.service" ];
+    restartIfChanged = false;
+    stopIfChanged = false;
+    path = with pkgs; [
+      coreutils
+      gnugrep
+      gnused
+      openiscsi
+      procps
+      config.services.k3s.package
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.coreutils}/bin/true";
+      TimeoutStopSec = 240;
+    };
+    preStop = ''
+      # Pods get SIGTERM from systemd's own scope stops; give them time to
+      # flush (databases) before anything is killed.
+      deadline=$((SECONDS + 100))
+      while pgrep -f containerd-shim > /dev/null && [ "$SECONDS" -lt "$deadline" ]; do
+        sleep 1
+      done
+
+      # Kill leftover shims, unmount /var/lib/kubelet/{pods,plugins} and
+      # /run/k3s, remove CNI state. Failures must not block shutdown.
+      k3s-killall.sh || true
+
+      # Log out the CSI iSCSI sessions while the network is still up.
+      iscsiadm -m session 2>/dev/null \
+        | sed -n 's/^tcp: \[[0-9]*\] \([^ ,]*\),[0-9]* \(iqn[^ ]*\) .*/\1 \2/p' \
+        | grep ':csi-' \
+        | while read -r portal target; do
+            iscsiadm -m node -p "$portal" -T "$target" --logout || true
+          done
+      exit 0
+    '';
+  };
 }
