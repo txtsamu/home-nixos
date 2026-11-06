@@ -1,5 +1,5 @@
 # Declarative provisioning for the out-of-store app artifacts (hermes,
-# proxmox-mcp-plus, tiktok-bot, headroom-proxy, camofox-browser, evonic).
+# proxmox-mcp-plus, tiktok-bot, headroom-proxy, camofox-browser).
 #
 # Before this module, /opt/* and /root/camofox-browser were placed by hand
 # (T7-T11) and the units only pointed at them - a reinstall from this flake
@@ -31,8 +31,7 @@
 # working service from starting.
 #
 # Not covered (state, not code - restore from backup): /root/.hermes,
-# tiktok-bot's cookies/watchlist/sqlite, ~moo/.headroom, evomem's iSCSI LUN,
-# /var/lib/evonic and /opt/evonic-source/.env.
+# tiktok-bot's cookies/watchlist/sqlite, ~moo/.headroom, evomem's iSCSI LUN.
 { lib, pkgs, ... }:
 let
   python = pkgs.python313;
@@ -67,21 +66,6 @@ let
       rev = "27f8098954277e379416dc8c1ae9bc5d9965ed82";
       patch = ./patches/tiktok-bot-local.patch;
     };
-    evonic = {
-      dir = "/opt/evonic-source";
-      # Fork branch home/v1.6.0, identical to upstream v1.6.0 (see evonic.nix).
-      url = "https://github.com/txtsamu/evonic.git";
-      rev = "87834dc864a4c7edb0c959b923337a1fad20cade";
-      # Evonic keeps all state under its checkout and rewrites .env there,
-      # so the tree belongs to the service user; the state directories are
-      # symlinked out to /var/lib/evonic (created by tmpfiles in evonic.nix)
-      # and `./evonic` finds the venv through .venv.
-      post = ''
-        for d in shared agents data logs run; do ln -s /var/lib/evonic/$d $d; done
-        ln -s /opt/evonic-venv .venv
-        chown -R -h evonic:evonic .
-      '';
-    };
   };
 
   venvs = {
@@ -111,10 +95,6 @@ let
           '/except Exception as e:/{n;s/_MSTOKEN = TokenManager.gen_real_msToken()/_MSTOKEN = TokenManager.gen_false_msToken()/}' \
           "$venv"/lib/python3*/site-packages/f2/apps/tiktok/utils.py
       '';
-    };
-    evonic = {
-      path = "/opt/evonic-venv";
-      lock = ./venvs/evonic.txt; # requirements.txt only, no editable install
     };
   };
 
@@ -220,9 +200,5 @@ in
           headroom-proxy = [ "provision-venv-headroom.service" ];
           tiktok-bot = [ "provision-venv-tiktok-bot.service" ];
           camofox-browser = [ "provision-src-camofox.service" ];
-          evonic = [
-            "provision-src-evonic.service"
-            "provision-venv-evonic.service"
-          ];
         };
 }
