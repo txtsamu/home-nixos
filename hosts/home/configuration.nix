@@ -20,7 +20,7 @@
     ./provision.nix # out-of-store app artifacts (venvs, source checkouts)
     ./evonic.nix # Evonic agent (loopback only, benchmarking vs hermes)
     ./logging.nix # journal size cap + Technitium log retention
-    ./scheduled-jobs.nix # script-type Hermes cron jobs as systemd timers
+    # ./scheduled-jobs.nix # script-type Hermes cron jobs as systemd timers; rolled back to Hermes cron 2026-11-06 (re-enable together with `hermes cron pause`, see the header of that file)
   ];
 
   # Fix for initrd hang on boot: this VM uses a virtio-scsi-pci controller
