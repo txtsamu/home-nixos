@@ -16,7 +16,7 @@
 # scoped setup key created directly in the NetBird dashboard
 # (vpn.ssamu.id) by the user. warp-vm keeps its own peer identity as-is
 # until T19/T20 - this is a genuinely new peer, not a migrated one.
-{ pkgs, config, ... }:
+{ pkgs, ... }:
 {
   systemd.services.netbird = {
     description = "NetBird mesh network client";
@@ -42,37 +42,16 @@
     };
   };
 
-  # Idempotent: `netbird up` only actually consumes the setup key on first
-  # registration - once /var/lib/netbird holds a registered peer identity,
-  # subsequent runs (every activation/boot) just reconnect using the
-  # existing local state, so re-running this on every switch is safe and
-  # doesn't burn through the setup key's use count.
-  systemd.services.netbird-up = {
-    description = "NetBird enrollment/reconnect";
-    after = [ "netbird.service" ];
-    requires = [ "netbird.service" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      # `netbird up` waits forever when the management server is
-      # unreachable, and a oneshot has no start timeout by default - so
-      # every `nixos-rebuild switch` that restarts NetBird hung on this job.
-      # Hit 2026-09-28 when ssamu.id expired (vpn.ssamu.id NXDOMAIN): the
-      # switch sat ~1h and blocked the next one. Failing here is harmless;
-      # the netbird daemon keeps retrying the management server on its own.
-      TimeoutStartSec = "90s";
-      # Real bug hit: `netbird up`'s own built-in --daemon-addr default
-      # doesn't match `netbird.service`'s explicit unix:///var/run/netbird.sock
-      # (differs by installed version - nixpkgs' netbird-client-0.71.4
-      # defaults to /var/run/netbird/sock, a different path entirely).
-      # Pass it explicitly so both sides agree regardless of version defaults.
-      ExecStart = "${pkgs.netbird}/bin/netbird up --daemon-addr unix:///var/run/netbird.sock --management-url https://vpn.ssamu.id:443 --setup-key-file ${config.age.secrets.netbird-setup-key.path}";
-      NoNewPrivileges = true;
-      PrivateTmp = true;
-      ProtectHome = "read-only";
-    };
-  };
+  # There is deliberately no enrollment/reconnect unit any more (the former
+  # `netbird-up` oneshot was removed 2026-11-06: after the daemon restarted it
+  # timed out against the management server, which was presenting a wrong TLS
+  # certificate, and left a failed unit). Enrollment is manual:
+  #   netbird up --daemon-addr unix:///var/run/netbird.sock \
+  #     --management-url https://vpn.ssamu.id:443 \
+  #     --setup-key-file /run/agenix/netbird-setup-key
+  # and the peer identity persists in /var/lib/netbird afterwards. Note that
+  # the daemon does not necessarily reconnect by itself after a restart; if
+  # wt0 is missing, run the command above.
 
   # Port of warp-vm's netbird-k8s-fwd-fix.sh (netbirdio/netbird#6022:
   # kube-router-style forwarding clobbers the meta mark NetBird uses to
@@ -83,8 +62,8 @@
   # flannel pod CIDR (10.42.0.0/16) that triggered it on warp-vm.
   systemd.services.netbird-k8s-fwd-fix = {
     description = "Re-insert NetBird forward-filter accept rule for the k3s pod CIDR";
-    after = [ "netbird-up.service" ];
-    requires = [ "netbird-up.service" ];
+    after = [ "netbird.service" ];
+    requires = [ "netbird.service" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
@@ -95,10 +74,18 @@
     };
     path = [ pkgs.nftables ];
     script = ''
+      found=0
       for i in $(seq 1 30); do
-        nft list chain ip netbird netbird-acl-forward-filter >/dev/null 2>&1 && break
+        if nft list chain ip netbird netbird-acl-forward-filter >/dev/null 2>&1; then
+          found=1
+          break
+        fi
         sleep 1
       done
+      if [ "$found" = 0 ]; then
+        echo "NetBird forward-filter chain not present (mesh not connected); rule not applied. Restart this unit once NetBird is connected." >&2
+        exit 0
+      fi
       nft list chain ip netbird netbird-acl-forward-filter 2>/dev/null | grep -q "10.42.0.0/16" && exit 0
       nft insert rule ip netbird netbird-acl-forward-filter iifname "wt0" ip daddr 10.42.0.0/16 accept
     '';
