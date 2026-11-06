@@ -19,6 +19,7 @@
     ./k3s.nix # T13 - done
     ./provision.nix # out-of-store app artifacts (venvs, source checkouts)
     ./evonic.nix # Evonic agent (loopback only, benchmarking vs hermes)
+    ./logging.nix # journal size cap + Technitium log retention
   ];
 
   # Fix for initrd hang on boot: this VM uses a virtio-scsi-pci controller
