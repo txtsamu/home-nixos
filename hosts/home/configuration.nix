@@ -18,6 +18,7 @@
     ./tiktok-bot.nix # T10 - done
     ./k3s.nix # T13 - done
     ./provision.nix # out-of-store app artifacts (venvs, source checkouts)
+    ./logging.nix # journal size cap + Technitium log retention
   ];
 
   # Fix for initrd hang on boot: this VM uses a virtio-scsi-pci controller
