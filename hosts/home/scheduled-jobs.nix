@@ -39,6 +39,14 @@
 #   delivered" to the journal and the unit stays successful. The token is only
 #   handed to tg-notify; the job scripts do not see it.
 #
+# TELEGRAM CHAT IDS (also by hand, never in git: this repo is public)
+#   Jobs name their target chat by alias, `main` or `other`. The aliases are
+#   resolved at run time from /var/lib/scheduled-jobs/chat-ids (root, 0600,
+#   created empty by tmpfiles), one `alias=<numeric chat id>` per line:
+#       printf 'main=<id>\nother=<id>\n' > /var/lib/scheduled-jobs/chat-ids
+#   An alias that is missing there means "message NOT delivered" (logged), the
+#   job itself still runs.
+#
 # GOING LIVE: the matching Hermes jobs MUST be paused, or every job runs
 #   twice (and the 5-minute evomem sync races itself):
 #       hermes cron pause 8fdeb489eb44 e023bde2da85 19a4de80a8f4 \
@@ -119,8 +127,16 @@ let
           cat >/dev/null
           return 0
         fi
-        local drc=0
-        tg-notify "$chat" || drc=$?
+        local drc=0 target=$chat
+        if ! [[ $chat =~ ^-?[0-9]+$ ]]; then
+          target=$(grep -m1 "^$chat=" "$stateDir/chat-ids" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]' || true)
+          if [ -z "$target" ]; then
+            cat >/dev/null
+            echo "WARNING: chat alias '$chat' not set in $stateDir/chat-ids, message for $name NOT delivered" >&2
+            return 0
+          fi
+        fi
+        tg-notify "$target" || drc=$?
         case $drc in
           0) ;;
           3) echo "WARNING: no Telegram bot token, message for $name NOT delivered" >&2 ;;
@@ -185,43 +201,44 @@ let
     '';
   };
 
-  # chat: Telegram chat id receiving stdout (null = deliver=local).
+  # chat: alias (see chat-ids above) of the Telegram chat receiving stdout
+  # (null = deliver=local).
   # calendar: OnCalendar in the host time zone; null = every 5 minutes.
   jobs = {
     proxmox-backup-status = {
       id = "8fdeb489eb44";
       script = "proxmox_backup_report.py";
-      chat = "599604156";
+      chat = "main";
       calendar = "*-*-* 04:00:00";
     };
     claude-code-session-import = {
       id = "e023bde2da85";
       script = "claude_import_watchdog.sh";
-      chat = "599604156";
+      chat = "main";
       calendar = "*-*-* 01:00:00";
     };
     evomem-claude-sync = {
       id = "19a4de80a8f4";
       script = "pull_evomem_sync_cron.py";
-      chat = "599604156";
+      chat = "main";
       calendar = null;
     };
     camofox-auto-update = {
       id = "3c8b5d4a784a";
       script = "camofox_auto_update.sh";
-      chat = "5030760003";
+      chat = "other";
       calendar = "Sun *-*-* 03:00:00";
     };
     mattpocock-skills-sync = {
       id = "2cc0bc49ffec";
       script = "mattpocock_skills_sync.py";
-      chat = "599604156";
+      chat = "main";
       calendar = "*-*-* 02:00:00";
     };
     pas-btech-chat-html = {
       id = "2e735e03ced2";
       script = "gowa_chat_digest.sh";
-      chat = "599604156";
+      chat = "main";
       calendar = "*-*-* 06,18:00:00";
     };
     pas-btech-media-safety-archive = {
@@ -233,7 +250,7 @@ let
     research-archive-sync-watchdog = {
       id = "96694a24d519";
       script = "sync_hermes_research.sh";
-      chat = "599604156";
+      chat = "main";
       calendar = "*-*-* 04:45:00";
     };
   };
@@ -248,6 +265,7 @@ in
     # Placeholder so LoadCredential below always has a file to load; the
     # real content is written by hand (see the header comment).
     "f ${tokenFile} 0600 root root -"
+    "f ${stateDir}/chat-ids 0600 root root -"
   ];
 
   systemd.services = lib.mapAttrs' (
