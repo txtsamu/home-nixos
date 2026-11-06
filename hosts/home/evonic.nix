@@ -136,6 +136,10 @@ in
       ReadWritePaths = [
         state
         src
+        # Per-task workspaces of the Evonic-vs-Hermes benchmark (written by
+        # the agent's file/bash tools). "-": ignored when the directory does
+        # not exist, so removing the benchmark never breaks the unit.
+        "-/srv/bench/work"
       ];
       # Keep a runaway agent from starving hermes and the k3s workloads.
       MemoryMax = "4G";
