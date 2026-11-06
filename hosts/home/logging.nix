@@ -13,5 +13,7 @@ _: {
   # Technitium (DynamicUser, logs under /var/log/private/technitium) writes one
   # file per day and never prunes. "e" = adjust an existing dir, and
   # systemd-tmpfiles-clean (daily timer) deletes entries older than 14 days.
-  systemd.tmpfiles.rules = [ "e /var/log/private/technitium/dns - - - 14d" ];
+  # "m:" = age by modification time: Technitium re-reads old logs, so their
+  # atime stays fresh and the default (newest of a/m/c time) never expired them.
+  systemd.tmpfiles.rules = [ "e /var/log/private/technitium/dns - - - m:14d" ];
 }
