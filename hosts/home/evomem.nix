@@ -18,15 +18,17 @@ let
   evomem = pkgs.stdenvNoCC.mkDerivation rec {
     pname = "evomem";
     version = "0.4.2";
-    # txtsamu/evomem fork, branch perf/cache-lexical-vocabulary: upstream 0.4.2
-    # plus a cached lexical vocabulary. Upstream rescans all of word_index on
+    # txtsamu/evomem fork, branch feat/utcp (v0.4.2-utcp1): the perf build below
+    # plus a UTCP manual served at /utcp and query/slug aliases for q/start; no
+    # store/schema changes. The perf part is upstream 0.4.2 plus a cached
+    # lexical vocabulary. Upstream rescans all of word_index on
     # every search (~5 s at 43k chunks, serialized behind one mutex, so a few
     # concurrent callers blew past the MCP bridge's timeout); this is ~0.13 s
     # with byte-identical results. Drop back to anvie/evomem once upstream
     # has the fix.
     src = pkgs.fetchzip {
-      url = "https://github.com/txtsamu/evomem/releases/download/v${version}-perf1/evomem-${version}-perf1-x86_64-unknown-linux-musl.zip";
-      hash = "sha256-O8sfblTaz5OaGBr8whf9b2UppIfjwdh+rTAVVStMfok=";
+      url = "https://github.com/txtsamu/evomem/releases/download/v${version}-utcp1/evomem-${version}-utcp1-x86_64-unknown-linux-musl.zip";
+      hash = "sha256-QPmU2SSo5SQgT1gc1OeIuyN9tgoOvAHphmMQ6vtzNvk=";
       stripRoot = false;
     };
     installPhase = "install -Dm755 evomem $out/bin/evomem";
