@@ -49,7 +49,8 @@ let
     "bookstack.lan" = "192.168.50.241:80";
     "openwebui.lan" = "192.168.50.245:8080";
     "copyparty.lan" = "192.168.50.242:3923";
-    "mihon.lan" = "192.168.50.248:4567";
+    # suwayomi ClusterIP (its LoadBalancer IP .248 was released back to the pool)
+    "mihon.lan" = "10.43.206.59:4567";
 
     # Perses dashboard (metrics visualization on top of the VictoriaMetrics
     # instance from home-k8s-resource-rightsizing-victoriametrics.md).
