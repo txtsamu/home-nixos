@@ -7,9 +7,6 @@
     disko.inputs.nixpkgs.follows = "nixpkgs";
     agenix.url = "github:ryantm/agenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
-    # tiktok-bot's scrape browser (hosts/home/anoa.nix). Not following our
-    # nixpkgs: its Qt WebEngine build is tested against its own pin.
-    anoa.url = "github:porcupine-md/anoa-browser/v0.19.1";
   };
 
   outputs =
@@ -18,7 +15,6 @@
       nixpkgs,
       disko,
       agenix,
-      anoa,
       ...
     }:
     let
@@ -28,7 +24,6 @@
     {
       nixosConfigurations.home = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs.anoa = anoa.packages.${system}.default;
         modules = [
           disko.nixosModules.disko
           agenix.nixosModules.default
