@@ -48,7 +48,13 @@
     serviceConfig = {
       Type = "exec";
       WorkingDirectory = "/root/camofox-browser";
-      EnvironmentFile = config.age.secrets.camofox-api-key.path;
+      # camofox-api-key gates cookie import; camofox-access-key sets
+      # CAMOFOX_ACCESS_KEY, which makes every route except /health require
+      # "Authorization: Bearer <key>" (without it the API is fully open on the LAN).
+      EnvironmentFile = [
+        config.age.secrets.camofox-api-key.path
+        config.age.secrets.camofox-access-key.path
+      ];
       ExecStart = "${pkgs.steam-run}/bin/steam-run ${pkgs.nodejs_22}/bin/node server.js";
       Restart = "on-failure";
       RestartSec = 10;

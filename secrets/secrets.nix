@@ -33,4 +33,7 @@ in
   "netbird-setup-key.age".publicKeys = all;
   "proxmox-mcp-config.age".publicKeys = all;
   "camofox-api-key.age".publicKeys = all;
+  # CAMOFOX_ACCESS_KEY=<token> - global bearer auth for the camofox-browser API
+  # (CAMOFOX_API_KEY above only gates cookie import).
+  "camofox-access-key.age".publicKeys = all;
 }
