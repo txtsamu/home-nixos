@@ -50,4 +50,11 @@
   age.secrets.camofox-api-key = {
     file = ../../secrets/camofox-api-key.age;
   };
+
+  # Global bearer token for the camofox-browser API, consumed by camofox.nix
+  # as a second EnvironmentFile (CAMOFOX_ACCESS_KEY=...). CAMOFOX_API_KEY
+  # above only gates cookie import, so without this the API is open on the LAN.
+  age.secrets.camofox-access-key = {
+    file = ../../secrets/camofox-access-key.age;
+  };
 }
