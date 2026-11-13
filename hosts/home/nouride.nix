@@ -23,11 +23,28 @@
 # Upgrades still come from Nouride itself: `nouride update` replaces /srv/nouride/nouride
 # and restarts the unit. When the installer's unit template changes in a release,
 # `nouride service diff` prints what this file is missing, and the fix is a line here.
-{ ... }:
+{ pkgs, ... }:
 let
   dir = "/srv/nouride";
 in
 {
+  # Nouride's own helpers run with `env: { PATH = "/usr/bin:/bin" }` — hardcoded in
+  # apps/engine/src/modules/toolchain/shared-tools.ts (making what agents installed
+  # runnable by their group) and in boot/agent-users.ts (seeding an agent's HOME). Those
+  # two directories hold nothing on NixOS, so at boot the daemon logged "the programs in
+  # the shared HOME could not be made every agent's to run", with "exec: find: not
+  # found" as the reason, and the same would happen to every `nouride tools run`. The
+  # programs it looks for are linked where it looks, and nowhere else in /usr/bin is
+  # touched.
+  systemd.tmpfiles.rules = [
+    "L+ /usr/bin/find - - - - ${pkgs.findutils}/bin/find"
+    "L+ /usr/bin/chmod - - - - ${pkgs.coreutils}/bin/chmod"
+    "L+ /usr/bin/chgrp - - - - ${pkgs.coreutils}/bin/chgrp"
+    "L+ /usr/bin/sh - - - - ${pkgs.bash}/bin/sh"
+    "L+ /usr/bin/tar - - - - ${pkgs.gnutar}/bin/tar"
+    "L+ /usr/bin/git - - - - ${pkgs.git}/bin/git"
+  ];
+
   users.groups.nouride.gid = 994;
   # The group an agent's folders are given, so a command running as one agent's user
   # cannot read another's. Root is not in it.
