@@ -80,7 +80,8 @@ in
       # previous version back (modules/update/confirm.ts). Outside the binary on purpose:
       # a new binary that crashes at once cannot rescue itself.
       ExecStartPre = [
-        ("-/bin/sh -c 'd=\"/srv/nouride\"; p=\"$$d/.nouride-pending-update\"; "
+        (
+          "-/bin/sh -c 'd=\"/srv/nouride\"; p=\"$$d/.nouride-pending-update\"; "
           + "[ -f \"$$p\" ] || exit 0; "
           + "n=$$(( $$(cat \"$$p.attempts\" 2>/dev/null || echo 0) + 1 )); echo \"$$n\" > \"$$p.attempts\"; "
           + "[ \"$$n\" -le 3 ] && exit 0; "
@@ -89,10 +90,14 @@ in
           + "[ -e \"$$d/$$f\" ] && mv \"$$d/$$f\" \"$$d/$$f.failed\"; "
           + "mv \"$$d/.nouride-previous/$$f\" \"$$d/$$f\"; done; "
           + "mv \"$$p\" \"$$d/.nouride-rolled-back\"; rm -f \"$$p.attempts\"; "
-          + "echo \"nouride: the update did not come up; restored the previous version\" >&2; exit 0'")
+          + "echo \"nouride: the update did not come up; restored the previous version\" >&2; exit 0'"
+        )
       ];
       ExecStart = "${dir}/nouride start";
-      EnvironmentFile = [ "${dir}/.env" "-/etc/nouride/nouride.env" ];
+      EnvironmentFile = [
+        "${dir}/.env"
+        "-/etc/nouride/nouride.env"
+      ];
 
       Restart = "always";
       RestartSec = 5;
@@ -180,7 +185,8 @@ in
     description = "Nouride agent command";
     serviceConfig = {
       Type = "simple";
-      ExecStart = "/usr/local/lib/nouride-run/nouride-run serve "
+      ExecStart =
+        "/usr/local/lib/nouride-run/nouride-run serve "
         + "--workspace ${dir}/.nouride/workspace "
         + "--reads ${dir}/.nouride/agents --reads ${dir}/.nouride/jobs "
         + "--reads ${dir}/.nouride/attachments --reads ${dir}/.nouride/tool-output "
