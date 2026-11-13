@@ -18,6 +18,7 @@
     ./k3s.nix # T13 - done
     ./provision.nix # out-of-store app artifacts (venvs, source checkouts)
     ./logging.nix # journal size cap + Technitium log retention
+    ./nouride.nix # Nouride agent daemon (/srv/nouride), units written out for NixOS
     # ./scheduled-jobs.nix # script-type Hermes cron jobs as systemd timers; rolled back to Hermes cron 2026-11-06 (re-enable together with `hermes cron pause`, see the header of that file)
   ];
 

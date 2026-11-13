@@ -96,6 +96,14 @@ in
     # above makes `caddy reload` fail, so the app reserves those names.
     extraConfig = ''
       import /var/lib/route-manager/*.caddy
+
+      http://127.0.0.1:8099 {
+        bind 127.0.0.1
+        rewrite * /zen/go{uri}
+        reverse_proxy https://opencode.ai {
+          header_up x-opencode-session nouride-home
+        }
+      }
     '';
 
     virtualHosts =
