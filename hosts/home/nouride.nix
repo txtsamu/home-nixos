@@ -9,10 +9,16 @@
 # The unit text below is that same file, translated key by key, so nothing about how
 # Nouride runs changes on this host: same user, same sandbox, same shutdown order.
 #
-# The service account and its group (`nouride`, `nr-agents`) are NOT declared here.
-# The installer makes them with `useradd --system`, and `users.mutableUsers` (the
-# default, and what this host runs) keeps them across rebuilds. Declaring them would
-# invite NixOS to renumber a uid that /srv/nouride is already owned by.
+# The service account and its groups have to be declared even though the installer
+# makes them itself: this host runs `users.mutableUsers = false`, so activation
+# rewrites /etc/passwd from this file and an account made with `useradd` disappears
+# on the next switch (the first attempt at this failed exactly that way, unit and all,
+# with status 217/USER). The ids are pinned to the ones the installer picked, which is
+# what /srv/nouride is already owned by, so no chown is needed.
+#
+# The per-agent accounts Nouride makes at run time (nr-<agent>) are wiped the same way.
+# It re-makes them when an agent needs one, so a rebuild costs nothing but a chown of
+# that agent's folders on its next command.
 #
 # Upgrades still come from Nouride itself: `nouride update` replaces /srv/nouride/nouride
 # and restarts the unit. When the installer's unit template changes in a release,
@@ -22,6 +28,19 @@ let
   dir = "/srv/nouride";
 in
 {
+  users.groups.nouride.gid = 994;
+  # The group an agent's folders are given, so a command running as one agent's user
+  # cannot read another's. Root is not in it.
+  users.groups.nr-agents.gid = 993;
+
+  users.users.nouride = {
+    uid = 996;
+    isSystemUser = true;
+    group = "nouride";
+    home = "${dir}/.nouride/home";
+    shell = "/run/current-system/sw/bin/nologin";
+  };
+
   systemd.services.nouride = {
     description = "Nouride multi-agent runtime";
     documentation = [ "https://github.com/nouverse/nouride" ];
