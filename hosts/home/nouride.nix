@@ -49,6 +49,7 @@ in
     "L+ /usr/sbin/usermod - - - - ${pkgs.shadow}/bin/usermod"
     "L+ /usr/sbin/groupadd - - - - ${pkgs.shadow}/bin/groupadd"
     "L+ /usr/sbin/nologin - - - - ${pkgs.shadow}/bin/nologin"
+    "L+ /usr/bin/id - - - - ${pkgs.coreutils}/bin/id"
     "L+ /usr/bin/find - - - - ${pkgs.findutils}/bin/find"
     "L+ /usr/bin/chmod - - - - ${pkgs.coreutils}/bin/chmod"
     "L+ /usr/bin/chgrp - - - - ${pkgs.coreutils}/bin/chgrp"
@@ -61,6 +62,10 @@ in
   # The group an agent's folders are given, so a command running as one agent's user
   # cannot read another's. Root is not in it.
   users.groups.nr-agents.gid = 993;
+  # The credentials directory is this group's to read and an agent's not, unless its pack
+  # grants it. install.sh makes it; without it the daemon logs "this system has no
+  # nr-creds group — run install.sh again" and leaves the directory 0750 on its own group.
+  users.groups.nr-creds.gid = 992;
 
   users.users.nouride = {
     uid = 996;
