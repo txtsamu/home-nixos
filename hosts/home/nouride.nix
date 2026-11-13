@@ -200,6 +200,11 @@ in
   # sandbox, because changing user needs it. Its log: `journalctl -t nouride-run`.
   systemd.services."nouride-run@" = {
     description = "Nouride agent command";
+    # The helper makes each agent's account with `useradd` and drops into it, and its own
+    # PATH is systemd's default (/usr/local/sbin:...:/bin), where none of that exists on
+    # NixOS: the daemon logged "nouride-run: useradd is not on this system" and refused
+    # every command an agent ran as anyone but the daemon's user.
+    path = [ "/run/current-system/sw" ];
     serviceConfig = {
       Type = "simple";
       ExecStart =
