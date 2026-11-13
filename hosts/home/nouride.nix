@@ -1,48 +1,8 @@
-# Nouride: the agent daemon from nouverse/nouride, installed by its own installer
-# into /srv/nouride and supervised here.
-#
-# Why the units are written out by hand instead of the ones the installer drops in:
-# `install.sh` copies `nouride.service`, `nouride-run.socket` and `nouride-run@.service`
-# into /etc/systemd/system and runs `systemctl enable --now nouride`. On NixOS that
-# directory is a symlink into the store (`/etc/static/systemd/system`), so the copy
-# fails with "Read-only file system" and the daemon is left installed but not started.
-# The unit text below is that same file, translated key by key, so nothing about how
-# Nouride runs changes on this host: same user, same sandbox, same shutdown order.
-#
-# The service account and its groups have to be declared even though the installer
-# makes them itself: this host runs `users.mutableUsers = false`, so activation
-# rewrites /etc/passwd from this file and an account made with `useradd` disappears
-# on the next switch (the first attempt at this failed exactly that way, unit and all,
-# with status 217/USER). The ids are pinned to the ones the installer picked, which is
-# what /srv/nouride is already owned by, so no chown is needed.
-#
-# The per-agent accounts Nouride makes at run time (nr-<agent>) are wiped the same way.
-# It re-makes them when an agent needs one, so a rebuild costs nothing but a chown of
-# that agent's folders on its next command.
-#
-# Upgrades still come from Nouride itself: `nouride update` replaces /srv/nouride/nouride
-# and restarts the unit. When the installer's unit template changes in a release,
-# `nouride service diff` prints what this file is missing, and the fix is a line here.
 { pkgs, ... }:
 let
   dir = "/srv/nouride";
 in
 {
-  # Nouride's own helpers run with `env: { PATH = "/usr/bin:/bin" }` — hardcoded in
-  # apps/engine/src/modules/toolchain/shared-tools.ts (making what agents installed
-  # runnable by their group) and in boot/agent-users.ts (seeding an agent's HOME). Those
-  # two directories hold nothing on NixOS, so at boot the daemon logged "the programs in
-  # the shared HOME could not be made every agent's to run", with "exec: find: not
-  # found" as the reason, and the same would happen to every `nouride tools run`. The
-  # programs it looks for are linked where it looks, and nowhere else in /usr/bin is
-  # touched.
-  #
-  # nouride-run's own user helper looks programs up in a fixed list of directories instead
-  # (/usr/sbin, /sbin, /usr/bin, /bin, in account.rs), never in PATH, and makes each
-  # agent's account with `useradd`: without these it refused every command with
-  # "nouride-run: useradd is not on this system". /usr/sbin does not exist on NixOS at all,
-  # and activation drops anything under /usr that tmpfiles did not put there, so both the
-  # directory and the account tools are listed here.
   systemd.tmpfiles.rules = [
     "d /usr/sbin 0755 root root -"
     "L+ /usr/sbin/useradd - - - - ${pkgs.shadow}/bin/useradd"
@@ -59,12 +19,7 @@ in
   ];
 
   users.groups.nouride.gid = 994;
-  # The group an agent's folders are given, so a command running as one agent's user
-  # cannot read another's. Root is not in it.
   users.groups.nr-agents.gid = 993;
-  # The credentials directory is this group's to read and an agent's not, unless its pack
-  # grants it. install.sh makes it; without it the daemon logs "this system has no
-  # nr-creds group — run install.sh again" and leaves the directory 0750 on its own group.
   users.groups.nr-creds.gid = 992;
 
   users.users.nouride = {
@@ -78,17 +33,11 @@ in
   systemd.services.nouride = {
     description = "Nouride multi-agent runtime";
     documentation = [ "https://github.com/nouverse/nouride" ];
-    # Chat gateways and LLM endpoints are all remote, so starting before the network is
-    # up just produces a reconnect storm in the log.
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     path = [ "/run/current-system/sw" ];
 
-    # Give up after five failures in two minutes, and stay failed: without a limit,
-    # Restart=always retries for ever and a config the daemon refuses becomes a silent
-    # loop that reads as "still starting". In unitConfig, not serviceConfig: systemd
-    # moved these in v230 and ignores them where they used to live.
     unitConfig = {
       StartLimitBurst = 5;
       StartLimitIntervalSec = 120;
@@ -97,8 +46,6 @@ in
     environment = {
       NOURIDE_SERVICE_KIND = "systemd";
       NOURIDE_CGROUP = "delegated";
-      # ProtectHome below makes the real home read-only, so HOME points at the writable
-      # directory instead: ssh known_hosts, git config and tool caches live under it.
       HOME = "${dir}/.nouride/home";
     };
 
@@ -106,13 +53,8 @@ in
       Type = "simple";
       User = "nouride";
       WorkingDirectory = dir;
-      # Nothing it creates is readable by other users unless it says so: the systemd
-      # default, 0022, made every file world-readable for the moment before a chmod.
       UMask = "0027";
 
-      # While an update is unconfirmed, count the starts and, on the fourth, put the
-      # previous version back (modules/update/confirm.ts). Outside the binary on purpose:
-      # a new binary that crashes at once cannot rescue itself.
       ExecStartPre = [
         (
           "-/bin/sh -c 'd=\"/srv/nouride\"; p=\"$$d/.nouride-pending-update\"; "
@@ -135,37 +77,21 @@ in
 
       Restart = "always";
       RestartSec = 5;
-      # In-flight turns are saved on SIGTERM; killing it early loses context.
       TimeoutStopSec = 45;
       KillSignal = "SIGTERM";
-      # The signal goes to the daemon alone; it stops its own children in order. The
-      # default sends SIGTERM to every process at once, which killed a command a turn
-      # was running at the start of the shutdown, and MCP servers before the turns
-      # still calling them.
       KillMode = "mixed";
 
-      # Soft ceiling for the daemon and everything it spawns: throttle, never kill.
-      # The installer writes 13360332800 bytes, 80% of this host's RAM; the percentage
-      # says the same thing and survives a RAM change.
       MemoryHigh = "80%";
-      # A command the kernel kills for memory is killed alone: the daemon stays up.
       OOMPolicy = "continue";
-      # The daemon splits its own cgroup in two: itself, protected, and what agents run,
-      # capped below MemoryHigh, so a command that eats the machine is what dies.
       Delegate = "yes";
 
-      # Hardening. The daemon runs commands on this host by design, which is exactly why
-      # the blast radius of the daemon itself should be bounded.
       NoNewPrivileges = true;
-      # A tmpfs is RAM, sized from the host's memory, not the container's: a 1.2 GB
-      # clone into /tmp is what these two numbers stand in front of.
       TemporaryFileSystem = [
         "/tmp:size=1073741824,mode=1777"
         "/var/tmp:size=268435456,mode=1777"
       ];
       ProtectSystem = "strict";
       ProtectHome = "read-only";
-      # The one path it must write: data/ and agents/ live here.
       ReadWritePaths = [ dir ];
       ProtectKernelTunables = true;
       ProtectKernelModules = true;
@@ -173,12 +99,7 @@ in
       RestrictSUIDSGID = true;
       RestrictNamespaces = true;
       LockPersonality = true;
-      # No capabilities, so none can be gained by any path NoNewPrivileges does not
-      # already close. An unprivileged account holds none to lose.
       CapabilityBoundingSet = "";
-      # Unix (D-Bus, nouride-pkg, ssh-agent), IPv4, IPv6 and netlink, which address
-      # lookup and `ip` read through. Raw packet sockets need a capability this account
-      # never has, so nothing that worked is closed.
       RestrictAddressFamilies = [
         "AF_UNIX"
         "AF_INET"
@@ -193,10 +114,6 @@ in
     };
   };
 
-  # Where the daemon asks for an agent's command to run as that agent's own user. Only
-  # root and the service group may connect, and no agent is in that group, so an agent
-  # cannot ask for another agent's user. Each connection starts one nouride-run@ process
-  # as root; the rules compiled into that binary decide what it may do.
   systemd.sockets.nouride-run = {
     description = "Nouride agents' commands (socket)";
     wantedBy = [ "sockets.target" ];
@@ -206,21 +123,13 @@ in
       SocketGroup = "nouride";
       SocketMode = "0660";
       Accept = "yes";
-      # Gone when stopped: the daemon reads "is the helper here" from this file, and one
-      # left behind would say ready while every command was refused.
       RemoveOnStop = "yes";
       MaxConnections = 64;
     };
   };
 
-  # One agent's command, started by the socket above. Root, and without the daemon's
-  # sandbox, because changing user needs it. Its log: `journalctl -t nouride-run`.
   systemd.services."nouride-run@" = {
     description = "Nouride agent command";
-    # The helper makes each agent's account with `useradd` and drops into it, and its own
-    # PATH is systemd's default (/usr/local/sbin:...:/bin), where none of that exists on
-    # NixOS: the daemon logged "nouride-run: useradd is not on this system" and refused
-    # every command an agent ran as anyone but the daemon's user.
     path = [ "/run/current-system/sw" ];
     serviceConfig = {
       Type = "simple";
@@ -234,13 +143,8 @@ in
       StandardOutput = "socket";
       StandardError = "journal";
       SyslogIdentifier = "nouride-run";
-      # Everything but /etc (users and groups) and the folders it gives their owners and
-      # groups stays read-only to it. The command it starts is the agent's, and its own
-      # user's rights are what decide what that may write.
       ProtectSystem = "strict";
       ProtectHome = "read-only";
-      # /etc for users and groups; the rest are the folders it gives their owners and
-      # groups. A folder not made yet is skipped (`-`), not a unit that fails to start.
       ReadWritePaths = [
         "/etc"
         "-${dir}/.nouride/workspace"
@@ -250,8 +154,6 @@ in
         "-${dir}/.nouride/tool-output"
         "-${dir}/.nouride/credentials"
       ];
-      # SYS_PTRACE, SYS_ADMIN and SYS_CHROOT to enter the daemon's mount namespace;
-      # FSETID so a folder can be given a setgid bit for a group root is not in.
       CapabilityBoundingSet = [
         "CAP_SETUID"
         "CAP_SETGID"

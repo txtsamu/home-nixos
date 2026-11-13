@@ -94,14 +94,6 @@ in
     # Sites owned by route-manager (written to this dir by the app). The glob
     # keeps a missing file from being an error. A name that duplicates a site
     # above makes `caddy reload` fail, so the app reserves those names.
-    #
-    # 127.0.0.1:8099 is OpenCode Go, not a .lan site: that gateway answers 400
-    # MissingSessionID to any request without an `x-opencode-session` header, and
-    # Nouride's Models form has no field for one (Name, Kind, Base URL, API Key).
-    # Without this door the only way to use it is hand-editing config.toml, which
-    # is the opposite of plug and play. Loopback only, so nothing off this host can
-    # reach it, and the caller's own Authorization header is what authenticates:
-    # the dashboard takes http://127.0.0.1:8099/v1 and the token, and nothing else.
     extraConfig = ''
       import /var/lib/route-manager/*.caddy
 
