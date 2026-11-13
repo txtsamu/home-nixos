@@ -36,7 +36,19 @@ in
   # found" as the reason, and the same would happen to every `nouride tools run`. The
   # programs it looks for are linked where it looks, and nowhere else in /usr/bin is
   # touched.
+  #
+  # nouride-run's own user helper looks programs up in a fixed list of directories instead
+  # (/usr/sbin, /sbin, /usr/bin, /bin, in account.rs), never in PATH, and makes each
+  # agent's account with `useradd`: without these it refused every command with
+  # "nouride-run: useradd is not on this system". /usr/sbin does not exist on NixOS at all,
+  # and activation drops anything under /usr that tmpfiles did not put there, so both the
+  # directory and the account tools are listed here.
   systemd.tmpfiles.rules = [
+    "d /usr/sbin 0755 root root -"
+    "L+ /usr/sbin/useradd - - - - ${pkgs.shadow}/bin/useradd"
+    "L+ /usr/sbin/usermod - - - - ${pkgs.shadow}/bin/usermod"
+    "L+ /usr/sbin/groupadd - - - - ${pkgs.shadow}/bin/groupadd"
+    "L+ /usr/sbin/nologin - - - - ${pkgs.shadow}/bin/nologin"
     "L+ /usr/bin/find - - - - ${pkgs.findutils}/bin/find"
     "L+ /usr/bin/chmod - - - - ${pkgs.coreutils}/bin/chmod"
     "L+ /usr/bin/chgrp - - - - ${pkgs.coreutils}/bin/chgrp"
