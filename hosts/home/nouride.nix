@@ -61,6 +61,10 @@ in
     };
 
     environment = {
+      # The systemd unit's own PATH is a bare /usr/bin:/bin, which on NixOS holds nothing:
+      # the daemon shells out to find/stat/chown when it makes the shared HOME runnable by
+      # each agent, and a bare PATH made that step log "exec: find: not found" and give up.
+      PATH = "${dir}/.nouride/bin:${dir}/.nouride/opt/python/bin:/run/current-system/sw/bin:/run/current-system/sw/sbin";
       NOURIDE_SERVICE_KIND = "systemd";
       NOURIDE_CGROUP = "delegated";
       # ProtectHome below makes the real home read-only, so HOME points at the writable
