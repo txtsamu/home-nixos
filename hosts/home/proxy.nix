@@ -47,7 +47,6 @@ let
     "immich.lan" = "192.168.50.251:2283";
     "uptime.lan" = "192.168.50.247:3001";
     "bookstack.lan" = "192.168.50.241:80";
-    "openwebui.lan" = "192.168.50.245:8080";
     "copyparty.lan" = "192.168.50.242:3923";
     # suwayomi ClusterIP (its LoadBalancer IP .248 was released back to the pool)
     "mihon.lan" = "10.43.206.59:4567";
