@@ -104,7 +104,7 @@
     192.168.50.50   px2
 
     ### VPS ###
-    103.134.154.180 vpz
+    103.250.10.200  vpz
   '';
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
