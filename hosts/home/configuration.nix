@@ -1,6 +1,6 @@
 # Base config for `home` (T1: provisioning skeleton).
 # Every later ticket (T2-T20 in txtsamu/claude-research#10-#28) adds a module
-# under ./ and imports it below - dns.nix, proxy.nix, tunnel.nix, vpn.nix,
+# under ./ and imports it below - dns.nix, proxy.nix, tunnel.nix,
 # mcp.nix, tiktok-bot.nix, evomem.nix, k3s.nix, secrets.nix.
 { lib, pkgs, ... }:
 {
@@ -9,7 +9,6 @@
     ./dns.nix # T3  - done
     ./proxy.nix # T4  - done
     ./tunnel.nix # T5  - done
-    ./vpn.nix # T6  - done
     ./evomem.nix # T7  - done
     ./mcp.nix # T8  - done
     ./camofox.nix # T9  - done
@@ -54,7 +53,7 @@
       # parallel-build IP 192.168.50.202 (plan §4 phase 2-3) until every
       # service on `home` was verified working; now the real, permanent
       # LAN IP, taken over from `warp-vm` once its own remaining services
-      # (technitium/caddy/cloudflared/netbird/evomem/hermes/proxmox-mcp)
+      # (technitium/caddy/cloudflared/evomem/hermes/proxmox-mcp)
       # were stopped and its network interface brought down to free it.
       address = "192.168.50.200";
       prefixLength = 24;

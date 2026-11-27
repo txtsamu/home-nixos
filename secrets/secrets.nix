@@ -30,7 +30,6 @@ in
 {
   "cloudflare-tunnel-credentials.age".publicKeys = all;
   "technitium-admin-password.age".publicKeys = all;
-  "netbird-setup-key.age".publicKeys = all;
   "proxmox-mcp-config.age".publicKeys = all;
   "camofox-api-key.age".publicKeys = all;
 }
