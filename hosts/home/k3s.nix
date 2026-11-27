@@ -176,4 +176,21 @@
       exit 0
     '';
   };
+
+  systemd.services.k3s-image-prune = {
+    description = "Prune container images that no container references";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${config.services.k3s.package}/bin/k3s crictl rmi --prune";
+    };
+  };
+
+  systemd.timers.k3s-image-prune = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 04:30:00";
+      Persistent = true;
+      RandomizedDelaySec = "30m";
+    };
+  };
 }
