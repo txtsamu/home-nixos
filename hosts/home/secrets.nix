@@ -23,16 +23,6 @@
     file = ../../secrets/technitium-admin-password.age;
   };
 
-  # T6 (txtsamu/claude-research#14): the NetBird setup key, used for manual
-  # enrollment via --setup-key-file (see vpn.nix; the netbird-up unit that
-  # consumed it was removed 2026-11-06). Single machine-scoped setup key created
-  # by the user directly in the self-hosted NetBird dashboard
-  # (vpn.ssamu.id) - not reused from warp-vm, which has its own peer
-  # identity that stays as-is until T19/T20.
-  age.secrets.netbird-setup-key = {
-    file = ../../secrets/netbird-setup-key.age;
-  };
-
   # T8 (txtsamu/claude-research#16): full proxmox-mcp-plus config.json
   # (contains the Proxmox API token). Encrypted as a whole - cleanest, and
   # keeps the token out of plaintext on disk. Materialized at
