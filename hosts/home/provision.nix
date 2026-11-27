@@ -53,8 +53,9 @@ let
       rev = "af3a2505fc3853e976ad261b2ca0cfc445054d33";
       patch = ./patches/camofox-browser-local.patch;
       # npm ci + the Camoufox browser download (~1.2G into
-      # /root/.cache/camoufox) - both need an FHS env, same as the service.
-      post = "${pkgs.steam-run}/bin/steam-run ${pkgs.nodejs_22}/bin/npm ci --no-audit --no-fund && ${pkgs.steam-run}/bin/steam-run ${pkgs.nodejs_22}/bin/npx camoufox-js fetch";
+      # /root/camofox-browser/.camoufox, not ~/.cache/camoufox - see
+      # camofox.nix) - both need an FHS env, same as the service.
+      post = "${pkgs.steam-run}/bin/steam-run ${pkgs.nodejs_22}/bin/npm ci --no-audit --no-fund && CAMOUFOX_INSTALL_DIR=/root/camofox-browser/.camoufox ${pkgs.steam-run}/bin/steam-run ${pkgs.nodejs_22}/bin/npx camoufox-js fetch";
     };
     tiktok-bot = {
       dir = "/opt/tiktok-bot";

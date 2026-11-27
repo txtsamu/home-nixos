@@ -3,9 +3,16 @@
 # Node.js server (source + node_modules copied verbatim from warp-vm's
 # /root/camofox-browser, same "artifacts live outside the Nix store"
 # pattern as evomem/hermes) wrapping Camoufox, a stealth Firefox fork
-# (the actual downloaded browser binary, /root/.cache/camoufox, also
-# copied verbatim - 1.2G, not something to re-fetch and risk a different
-# build).
+# (the actual downloaded browser binary, /root/camofox-browser/.camoufox,
+# also copied verbatim - 1.2G, not something to re-fetch and risk a
+# different build).
+#
+# The browser bundle deliberately does NOT live in ~/.cache/camoufox
+# (camoufox-js's default): on 2026-11-28 a Hermes disk cleanup ran
+# `rm -rf /root/.cache/camoufox` and left the service unable to launch a
+# browser, while provision-src-camofox stayed a no-op because the source
+# checkout still existed. CAMOUFOX_INSTALL_DIR keeps it out of the cache
+# sweep path; provision.nix's post step uses the same path.
 #
 # Real NixOS problem specific to this ticket: the Camoufox binary (and
 # any native .node addons in the copied node_modules - playwright-core
@@ -44,6 +51,7 @@
       CAMOFOX_CRASH_REPORT_ENABLED = "false";
       CAMOFOX_ADDONS = "/root/camofox-browser/addons/quetta_xpi";
       CAMOFOX_DISABLE_DEFAULT_ADDONS = "1";
+      CAMOUFOX_INSTALL_DIR = "/root/camofox-browser/.camoufox";
     };
     serviceConfig = {
       Type = "exec";
